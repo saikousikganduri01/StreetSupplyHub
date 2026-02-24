@@ -1,0 +1,358 @@
+{
+"vendors": [
+{
+"vendor_id": "V_GHA_001",
+"vendor_name": "Ramesh Reddy",
+"vendor_type": "Farmer",
+"village": "Ghatkesar",
+"rating": 4.2,
+"trust_score": 85,
+"stock_capacity_tons": 5,
+"verified_status": true,
+"operating_hours": { "open": "06:00", "close": "18:00" },
+"contact": { "phone": "+91 9848012345", "email": "ramesh.reddy@ruralmail.in" }
+},
+{
+"vendor_id": "V_GHA_002",
+"vendor_name": "Suresh Babu",
+"vendor_type": "Wholesaler",
+"village": "Ghatkesar",
+"rating": 3.8,
+"trust_score": 70,
+"stock_capacity_tons": 20,
+"verified_status": true,
+"operating_hours": { "open": "08:00", "close": "20:00" },
+"contact": { "phone": "+91 9989054321", "email": "suresh.ghatkesar@vlink.com" }
+},
+{
+"vendor_id": "V_GHA_003",
+"vendor_name": "Anitha Rao",
+"vendor_type": "Retailer",
+"village": "Ghatkesar",
+"rating": 4.5,
+"trust_score": 92,
+"stock_capacity_tons": 2,
+"verified_status": true,
+"operating_hours": { "open": "09:00", "close": "21:00" },
+"contact": { "phone": "+91 9123456780", "email": "anitha.stores@gmail.com" }
+},
+{
+"vendor_id": "V_GHA_004",
+"vendor_name": "Krishna Murthy",
+"vendor_type": "Farmer",
+"village": "Ghatkesar",
+"rating": 3.1,
+"trust_score": 45,
+"stock_capacity_tons": 4,
+"verified_status": false,
+"operating_hours": { "open": "05:30", "close": "17:30" },
+"contact": { "phone": "+91 9440011223", "email": "murthy.k@yahoo.in" }
+},
+{
+"vendor_id": "V_GHA_005",
+"vendor_name": "Laxmi Devi",
+"vendor_type": "Farmer",
+"village": "Ghatkesar",
+"rating": 4.8,
+"trust_score": 95,
+"stock_capacity_tons": 6,
+"verified_status": true,
+"operating_hours": { "open": "06:00", "close": "18:00" },
+"contact": { "phone": "+91 8886655443", "email": "laxmi.agri@vlink.com" }
+},
+{
+"vendor_id": "V_GHA_006",
+"vendor_name": "Venkat Raman",
+"vendor_type": "Wholesaler",
+"village": "Ghatkesar",
+"rating": 3.5,
+"trust_score": 62,
+"stock_capacity_tons": 18,
+"verified_status": false,
+"operating_hours": { "open": "08:00", "close": "19:00" },
+"contact": { "phone": "+91 7702233445", "email": "raman.trading@outlook.com" }
+},
+{
+"vendor_id": "V_BIB_001",
+"vendor_name": "Mallesh Goud",
+"vendor_type": "Farmer",
+"village": "Bibinagar",
+"rating": 4.1,
+"trust_score": 82,
+"stock_capacity_tons": 8,
+"verified_status": true,
+"operating_hours": { "open": "06:00", "close": "17:00" },
+"contact": { "phone": "+91 9550066778", "email": "mallesh.bibi@ruralmail.in" }
+},
+{
+"vendor_id": "V_BIB_002",
+"vendor_name": "Srinivas Rao",
+"vendor_type": "Wholesaler",
+"village": "Bibinagar",
+"rating": 3.9,
+"trust_score": 75,
+"stock_capacity_tons": 25,
+"verified_status": true,
+"operating_hours": { "open": "08:30", "close": "20:30" },
+"contact": { "phone": "+91 9391022334", "email": "sri.wholesales@vlink.com" }
+},
+{
+"vendor_id": "V_BIB_003",
+"vendor_name": "Padma Kavitha",
+"vendor_type": "Retailer",
+"village": "Bibinagar",
+"rating": 4.7,
+"trust_score": 98,
+"stock_capacity_tons": 1.5,
+"verified_status": true,
+"operating_hours": { "open": "08:00", "close": "22:00" },
+"contact": { "phone": "+91 9000111222", "email": "padma.kirana@gmail.com" }
+},
+{
+"vendor_id": "V_BIB_004",
+"vendor_name": "Rajesh Kumar",
+"vendor_type": "Farmer",
+"village": "Bibinagar",
+"rating": 2.9,
+"trust_score": 42,
+"stock_capacity_tons": 3,
+"verified_status": false,
+"operating_hours": { "open": "07:00", "close": "18:00" },
+"contact": { "phone": "+91 9866554433", "email": "rajesh.agri@rediff.com" }
+},
+{
+"vendor_id": "V_BIB_005",
+"vendor_name": "Balaji Singh",
+"vendor_type": "Wholesaler",
+"village": "Bibinagar",
+"rating": 3.4,
+"trust_score": 58,
+"stock_capacity_tons": 15,
+"verified_status": false,
+"operating_hours": { "open": "09:00", "close": "19:00" },
+"contact": { "phone": "+91 7382099887", "email": "balaji.traders@vlink.com" }
+},
+{
+"vendor_id": "V_BIB_006",
+"vendor_name": "Narsimha Rao",
+"vendor_type": "Farmer",
+"village": "Bibinagar",
+"rating": 4.3,
+"trust_score": 88,
+"stock_capacity_tons": 10,
+"verified_status": true,
+"operating_hours": { "open": "05:00", "close": "16:00" },
+"contact": { "phone": "+91 9948077665", "email": "narsimha.f@ruralmail.in" }
+},
+{
+"vendor_id": "V_SHA_001",
+"vendor_name": "Mohammad Ali",
+"vendor_type": "Wholesaler",
+"village": "Shamshabad",
+"rating": 4.6,
+"trust_score": 94,
+"stock_capacity_tons": 22,
+"verified_status": true,
+"operating_hours": { "open": "07:00", "close": "21:00" },
+"contact": { "phone": "+91 9849022334", "email": "ali.exports@vlink.com" }
+},
+{
+"vendor_id": "V_SHA_002",
+"vendor_name": "Prakash J",
+"vendor_type": "Farmer",
+"village": "Shamshabad",
+"rating": 3.7,
+"trust_score": 68,
+"stock_capacity_tons": 7,
+"verified_status": true,
+"operating_hours": { "open": "06:00", "close": "18:00" },
+"contact": { "phone": "+91 9177044556", "email": "prakash.j@ruralmail.in" }
+},
+{
+"vendor_id": "V_SHA_003",
+"vendor_name": "Sita Mahalakshmi",
+"vendor_type": "Retailer",
+"village": "Shamshabad",
+"rating": 4.9,
+"trust_score": 100,
+"stock_capacity_tons": 3,
+"verified_status": true,
+"operating_hours": { "open": "08:00", "close": "22:00" },
+"contact": { "phone": "+91 9490088776", "email": "sita.organics@gmail.com" }
+},
+{
+"vendor_id": "V_SHA_004",
+"vendor_name": "Arjun Kumar",
+"vendor_type": "Farmer",
+"village": "Shamshabad",
+"rating": 2.7,
+"trust_score": 40,
+"stock_capacity_tons": 4,
+"verified_status": false,
+"operating_hours": { "open": "06:30", "close": "17:30" },
+"contact": { "phone": "+91 8122334455", "email": "arjun.k@yahoo.com" }
+},
+{
+"vendor_id": "V_SHA_005",
+"vendor_name": "Vicky Bhai",
+"vendor_type": "Wholesaler",
+"village": "Shamshabad",
+"rating": 3.2,
+"trust_score": 52,
+"stock_capacity_tons": 12,
+"verified_status": false,
+"operating_hours": { "open": "10:00", "close": "20:00" },
+"contact": { "phone": "+91 7013344556", "email": "vicky.traders@vlink.com" }
+},
+{
+"vendor_id": "V_SHA_006",
+"vendor_name": "Chandra Shekar",
+"vendor_type": "Farmer",
+"village": "Shamshabad",
+"rating": 4.0,
+"trust_score": 80,
+"stock_capacity_tons": 9,
+"verified_status": true,
+"operating_hours": { "open": "05:30", "close": "16:30" },
+"contact": { "phone": "+91 9346011223", "email": "shekar.farm@ruralmail.in" }
+}
+],
+"products": [
+{
+"product_id": "P001",
+"commodity_name": "Tomato",
+"category": "Vegetable",
+"variety": "Desi",
+"grade": "A",
+"season_type": "All",
+"shelf_life_days": 5
+},
+{
+"product_id": "P002",
+"commodity_name": "Onion",
+"category": "Vegetable",
+"variety": "Nasik Red",
+"grade": "B",
+"season_type": "All",
+"shelf_life_days": 30
+},
+{
+"product_id": "P003",
+"commodity_name": "Rice",
+"category": "Grain",
+"variety": "Sona Masuri",
+"grade": "A",
+"season_type": "Rabi",
+"shelf_life_days": 365
+},
+{
+"product_id": "P004",
+"commodity_name": "Wheat",
+"category": "Grain",
+"variety": "Lokwan",
+"grade": "A",
+"season_type": "Rabi",
+"shelf_life_days": 365
+},
+{
+"product_id": "P005",
+"commodity_name": "Mango",
+"category": "Fruit",
+"variety": "Benishan",
+"grade": "A",
+"season_type": "Summer",
+"shelf_life_days": 7
+},
+{
+"product_id": "P006",
+"commodity_name": "Potato",
+"category": "Vegetable",
+"variety": "Jyoti",
+"grade": "B",
+"season_type": "All",
+"shelf_life_days": 45
+}
+],
+"market_context": [
+{
+"date": "2026-01-01",
+"village": "Ghatkesar",
+"rainfall_mm": 0,
+"temperature_celsius": 22,
+"festival_flag": true,
+"transport_cost_index": 1.1,
+"inflation_index": 1.02
+},
+{
+"date": "2026-01-14",
+"village": "Bibinagar",
+"rainfall_mm": 0,
+"temperature_celsius": 24,
+"festival_flag": true,
+"transport_cost_index": 1.2,
+"inflation_index": 1.05
+},
+{
+"date": "2026-03-20",
+"village": "Shamshabad",
+"rainfall_mm": 5,
+"temperature_celsius": 38,
+"festival_flag": false,
+"transport_cost_index": 1.05,
+"inflation_index": 1.12
+}
+],
+"listings": [
+{
+"listing_id": "L_0001",
+"date": "2026-01-01",
+"vendor_id": "V_GHA_001",
+"product_id": "P001",
+"village": "Ghatkesar",
+"stock_available_tons": 1.2,
+"minimum_quantity": 0.05,
+"price_offered": 25.5,
+"previous_day_price": 24.0,
+"price_change": 1.5,
+"competitor_avg_price": 26.0,
+"demand_index": 0.85,
+"supply_index": 0.6,
+"seasonal_factor": 0.5,
+"recommended_price": 25.8
+},
+{
+"listing_id": "L_0002",
+"date": "2026-01-01",
+"vendor_id": "V_GHA_002",
+"product_id": "P003",
+"village": "Ghatkesar",
+"stock_available_tons": 15.0,
+"minimum_quantity": 1.0,
+"price_offered": 52000.0,
+"previous_day_price": 52000.0,
+"price_change": 0.0,
+"competitor_avg_price": 51500.0,
+"demand_index": 0.4,
+"supply_index": 0.9,
+"seasonal_factor": 0.8,
+"recommended_price": 51800.0
+},
+{
+"listing_id": "L_1500",
+"date": "2026-03-28",
+"vendor_id": "V_SHA_001",
+"product_id": "P005",
+"village": "Shamshabad",
+"stock_available_tons": 2.5,
+"minimum_quantity": 0.1,
+"price_offered": 120.0,
+"previous_day_price": 115.0,
+"price_change": 5.0,
+"competitor_avg_price": 125.0,
+"demand_index": 0.95,
+"supply_index": 0.3,
+"seasonal_factor": 1.0,
+"recommended_price": 122.5
+}
+]
+}
