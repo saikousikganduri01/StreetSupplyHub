@@ -23,10 +23,16 @@ function googleTranslateElementInit() {
             <button id="menu-btn" class="hidden" onclick="toggleSidebar()">☰</button>
             <h2 class="logo" onclick="location.reload()" style="cursor:pointer">StreetSupply<span>Hub</span></h2>
         </div>
+        <div class="search-wrapper">
+            <select id="category-select" onchange="filterProducts()" class="category-select">
+                <option value="all">🛒 All</option>
+                <option value="vegetable">🥦 Vegetables</option>
+                <option value="flour">🌾 Flour</option>
+                <option value="oil">🛢 Oils</option>
+            </select>
+            <input type="text" id="landing-search" placeholder="Search products..." onkeyup="filterProducts()">
+        </div>
         <div class="nav-right-group">
-            <div id="search-container" class="search-wrapper">
-                <input type="text" id="landing-search" placeholder="Search products..." onkeyup="filterProducts()">
-            </div>
             <div class="cart-icon-wrapper" onclick="toggleCart()">
                 <span>🛒</span>
                 <span id="cart-count">0</span>
@@ -108,7 +114,6 @@ function googleTranslateElementInit() {
 
 <!-- MY ORDERS PAGE -->
 
-
     <div id="left-sidebar" class="sidebar-hidden">
         <div class="sidebar-header">
             <h3>Menu</h3>
@@ -130,12 +135,7 @@ function googleTranslateElementInit() {
             </section>
         </div>
 
-        <div class="category-bar">
-            <button onclick="filterCategory('all')">All</button>
-            <button onclick="filterCategory('vegetable')">Vegetables</button>
-            <button onclick="filterCategory('oil')">Oils</button>
-            <button onclick="filterCategory('flour')">Flours</button>
-        </div>
+        
 
         <section class="products-grid" id="product-list"></section>
     </div>
@@ -257,7 +257,42 @@ function googleTranslateElementInit() {
         <br>
         <button class="btn-primary" onclick="goHome()" style="width:auto; padding: 10px 30px;">⬅ Back to Home</button>
     </div>
+    <div id="support-page" class="hidden container" style="margin-top:40px;">
+    <h2>💬 Support </h2>
 
+    <div class="profile-box">
+
+            <label>Subject</label>
+            <input type="text" id="support-subject" class="input-field" placeholder="Enter subject">
+
+            <label>Message</label>
+            <textarea id="support-message" class="input-field" placeholder="Describe your issue or feedback"></textarea>
+
+            <label>Type</label>
+            <select id="support-type" class="input-field">
+                <option value="complaint">⚠ Complaint</option>
+                <option value="query">❓ Query</option>
+            </select>
+            <button class="btn-primary" onclick="submitSupport()">Submit</button>
+        </div>
+
+        <button class="btn-primary" onclick="goHome()" style="width:auto; padding:10px 30px;">
+            ⬅ Back to Home
+        </button>
+    </div>
+    <div id="reviews-page" class="hidden container" style="margin-top:40px;">
+        <h2>⭐ Rate Suppliers</h2>
+
+        <!-- ✅ Success Message Box -->
+        <div id="review-success" class="hidden success-message"></div>
+
+        <div id="reviews-list"></div>
+
+        <br>
+        <button class="btn-primary" onclick="goHome()" style="width:auto; padding:10px 30px;">
+            ⬅ Back to Home
+        </button>
+    </div>
     <script src="script.js"></script>
 </body>
 </html>
