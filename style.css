@@ -13,10 +13,29 @@ body { margin: 0; background: var(--bg); color: #333; }
 .nav-right-group { display: flex; align-items: center; gap: 20px; }
 
 /* Search Bar */
-.search-wrapper input { 
-    padding: 10px 20px; border-radius: 25px; border: 1px solid #ddd; outline: none; width: 220px; transition: 0.3s; 
+.search-wrapper {
+    display: flex;
+    align-items: center;
+    width: 50%;
+    max-width: 800px;
 }
-.search-wrapper input:focus { width: 300px; border-color: var(--primary); }
+
+.category-select {
+    width: 80px;          /* decrease this */
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 30px 0 0 30px;
+    background: #f3f3f3;
+    cursor: pointer;
+    outline: none;
+}
+.search-wrapper input {
+    flex: 1;
+    padding: 12px 20px;
+    border: 1px solid #ddd;
+    border-left: none;
+    border-radius: 0 30px 30px 0;
+}
 
 /* Products */
 .hero-mini { text-align: center; padding: 40px 10%; }
