@@ -19,9 +19,8 @@ body { margin: 0; background: var(--bg); color: #333; }
     width: 50%;
     max-width: 800px;
 }
-
 .category-select {
-    width: 80px;          /* decrease this */
+    width: 90px;
     padding: 10px;
     border: 1px solid #ddd;
     border-radius: 30px 0 0 30px;
@@ -29,13 +28,11 @@ body { margin: 0; background: var(--bg); color: #333; }
     cursor: pointer;
     outline: none;
 }
-.search-wrapper input {
+.search-wrapper input { 
     flex: 1;
-    padding: 12px 20px;
-    border: 1px solid #ddd;
-    border-left: none;
-    border-radius: 0 30px 30px 0;
+    padding: 12px 20px; border: 1px solid #ddd; border-left: none; outline: none; border-radius: 0 30px 30px 0; transition: 0.3s; 
 }
+.search-wrapper input:focus { border-color: var(--primary); }
 
 /* Products */
 .hero-mini { text-align: center; padding: 40px 10%; }
@@ -45,6 +42,7 @@ body { margin: 0; background: var(--bg); color: #333; }
 .prod-card:hover { transform: translateY(-5px); box-shadow: var(--shadow); }
 .moq-tag { font-size: 0.75rem; color: #d32f2f; background: #ffebee; padding: 3px 8px; border-radius: 5px; font-weight: 600; }
 .price { font-size: 1.3rem; font-weight: 800; color: var(--primary); margin: 10px 0; }
+.view-only-tag { font-size: 0.8rem; color: #777; background: #f9f9f9; border: 1px solid #ddd; padding: 10px; border-radius: 6px; text-align: center; }
 
 /* Cart */
 .cart-icon-wrapper { position: relative; cursor: pointer; font-size: 1.6rem; }
@@ -61,6 +59,9 @@ body { margin: 0; background: var(--bg); color: #333; }
 /* Auth */
 #auth-container { height: 100vh; width: 100vw; position: fixed; top: 0; left: 0; z-index: 3000; display: flex; align-items: center; justify-content: center; background: #e8f5e9; }
 .auth-card { background: white; padding: 40px; border-radius: 20px; width: 420px; box-shadow: var(--shadow); }
+.auth-footer { text-align: center; margin-top: 10px; font-size: 0.9rem; color: #666; }
+.auth-footer a { color: var(--primary); text-decoration: none; font-weight: 600; }
+.auth-footer a:hover { text-decoration: underline; }
 .role-selection { display: flex; gap: 10px; margin-bottom: 25px; }
 .role-block { flex: 1; padding: 15px; border: 2px solid #eee; border-radius: 12px; cursor: pointer; text-align: center; }
 .active-role { border-color: var(--primary); background: #f1f8f1; }
@@ -114,8 +115,6 @@ body { margin: 0; background: var(--bg); color: #333; }
     color: #cc0000;
 }
 
-/* ... keep previous root and base styles ... */
-
 .file-input-group {
     background: #f9f9f9;
     padding: 10px;
@@ -134,6 +133,35 @@ body { margin: 0; background: var(--bg); color: #333; }
 textarea.input-field {
     height: 80px;
     resize: none;
+}
+
+#profile-page .profile-box,
+#support-page .profile-box {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    border: 1px solid #eee;
+}
+
+.profile-box label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #555;
+    display: block;
+    margin-top: 10px;
+}
+
+.profile-box select.input-field {
+    background: #fafafa;
+}
+
+#support-page .profile-box textarea.input-field {
+    height: 120px;
+}
+
+#support-page .profile-box button.btn-primary {
+    margin-top: 10px;
 }
 
 #registration-form {
@@ -204,9 +232,21 @@ textarea.input-field {
 .logout-btn {
     color: red;
 }
+
+.otp-message {
+    margin-top: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    min-height: 20px;
+}
+
+.otp-success { color: green; }
+.otp-error { color: red; }
+
 /* Scrollbar styling for the form */
 #registration-form::-webkit-scrollbar { width: 5px; }
 #registration-form::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
+
 /* Sidebar Styles */
 #left-sidebar {
     position: fixed; left: 0; top: 0; width: 280px; height: 100%;
@@ -224,6 +264,7 @@ textarea.input-field {
 #menu-btn { 
     background: none; border: none; font-size: 1.8rem; cursor: pointer; margin-right: 15px; 
 }
+
 .group-btn {
     margin-top: 8px;
     background: #1976d2;
@@ -245,6 +286,7 @@ textarea.input-field {
     color: green;
     margin-top: 4px;
 }
+
 .loan-popup {
     position: fixed;
     top: 0;
@@ -279,6 +321,7 @@ textarea.input-field {
 .loan-box button:hover {
     background: #125aa0;
 }
+
 .category-bar {
     display: flex;
     gap: 10px;
@@ -298,11 +341,13 @@ textarea.input-field {
 .category-bar button:hover {
     background: #125aa0;
 }
+
 .container {
     max-width: 1100px;
     margin: auto;
     padding: 0 20px;
 }
+
 .trend-section {
     padding: 100px;
     background: #f7f7f7;
@@ -327,6 +372,7 @@ textarea.input-field {
 
 .trend-card .up { color: green; }
 .trend-card .down { color: red; }
+
 /* Seller Dashboard specific table */
 .seller-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }
 .seller-table th, .seller-table td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
@@ -335,15 +381,6 @@ textarea.input-field {
 progress {
     width: 100%;
     height: 10px;
-}
-
-/* Add to your existing style.css */
-.otp-box { 
-    text-align: center; 
-    font-size: 1.6rem; 
-    letter-spacing: 10px; 
-    border: 2px solid var(--primary) !important; 
-    background: #f1f8f1;
 }
 
 .bargain-btn {
@@ -360,6 +397,7 @@ progress {
     from { transform: translateY(-30px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
 }
+
 .trend-section {
     background: white;
     border-radius: 8px;
@@ -367,12 +405,6 @@ progress {
     margin-bottom: 20px;
 }
 
-.input-field {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
 /* Centered Success Popup Overlay */
 .custom-popup-overlay {
     position: fixed;
@@ -380,8 +412,8 @@ progress {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.6); /* Darkens the background */
-    backdrop-filter: blur(4px); /* Blurs the background */
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -389,7 +421,6 @@ progress {
     animation: fadeIn 0.3s ease;
 }
 
-/* The actual box */
 .custom-popup-box {
     background: white;
     padding: 30px;
@@ -419,4 +450,124 @@ progress {
 @keyframes scaleUp {
     from { transform: scale(0.8); }
     to { transform: scale(1); }
+}
+
+.success-message {
+    background: #e8f5e9;
+    border: 1px solid #27ae60;
+    color: #1b5e20;
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.star {
+    font-size: 20px;
+    cursor: pointer;
+    margin-right: 4px;
+}
+
+.chat-button {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    z-index: 5000;
+    transition: transform 0.3s;
+}
+
+.chat-button:hover { transform: scale(1.08); }
+
+.chat-window {
+    position: fixed;
+    bottom: 100px;
+    right: 30px;
+    width: 320px;
+    height: 450px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    z-index: 5000;
+    overflow: hidden;
+}
+
+.chat-header {
+    background: var(--primary);
+    color: white;
+    padding: 15px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.close-chat {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.chat-body {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 0.9rem;
+}
+
+.user-msg {
+    align-self: flex-end;
+    background: #e8f5e9;
+    padding: 8px 12px;
+    border-radius: 12px 12px 0 12px;
+    max-width: 85%;
+    word-break: break-word;
+}
+
+.bot-msg {
+    align-self: flex-start;
+    background: #f1f1f1;
+    padding: 8px 12px;
+    border-radius: 12px 12px 12px 0;
+    max-width: 85%;
+    word-break: break-word;
+}
+
+.chat-footer {
+    display: flex;
+    padding: 10px;
+    border-top: 1px solid #eee;
+    gap: 8px;
+}
+
+.chat-footer input {
+    flex: 1;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    outline: none;
+    padding: 8px 10px;
+}
+
+.chat-footer button {
+    border: none;
+    background: none;
+    color: var(--primary);
+    font-size: 20px;
+    cursor: pointer;
 }
