@@ -47,5 +47,37 @@ function googleTranslateElementInit() {
             <button id="auth-nav-btn" class="btn-login-nav" onclick="showLogin()">Login</button>
         </div>
     </header>
+        <div id="left-sidebar" class="sidebar-hidden">
+        <div class="sidebar-header">
+            <h3>Menu</h3>
+            <button onclick="toggleSidebar()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">×</button>
+        </div>
+        <div id="sidebar-content" class="sidebar-links"></div>
+    </div>
+    <div id="landing-page">
+        <section class="hero-mini" id="hero-section">
+            <h1>Direct from <span class="highlight">Wholesalers</span></h1>
+            <p>Verified raw materials with transparent pricing & digital bargaining.</p>
+        </section>
+        <div class="container">
+            <section id="trend-section" class="trend-section">
+                <h2>📈 Recent Price Trends</h2>
+                <div id="trend-list" class="trend-list"></div>
+            </section>
+        </div>
+    </div>
+    <div id="cart-sidebar" class="cart-hidden">
+        <div class="cart-header">
+            <h3>Your Order</h3>
+            <button class="close-btn" onclick="toggleCart()">×</button>
+        </div>
+        <div id="cart-items">
+            <p style="padding:20px; text-align:center;">Empty</p>
+        </div>
+        <div class="cart-footer">
+            <p id="cart-total-footer" style="font-weight:bold"></p>
+            <button class="btn-primary" onclick="placeOrder()">Checkout Now</button>
+        </div>
+    </div>
 </body>
 </html>
