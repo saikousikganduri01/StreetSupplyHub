@@ -16,3 +16,36 @@ function googleTranslateElementInit() {
 }
 </script>
 <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+<body>
+    <header class="landing-nav">
+        <div class="nav-left-group">
+            <button id="menu-btn" class="hidden" onclick="toggleSidebar()">☰</button>
+            <h2 class="logo" onclick="location.reload()" style="cursor:pointer">StreetSupply<span>Hub</span></h2>
+        </div>
+        <div class="nav-right-group">
+            <div id="search-container" class="search-wrapper">
+                <input type="text" id="landing-search" placeholder="Search products..." onkeyup="filterProducts()">
+            </div>
+            <div class="cart-icon-wrapper" onclick="toggleCart()">
+                <span>🛒</span>
+                <span id="cart-count">0</span>
+            </div>
+            <div id="profile-wrapper" class="hidden profile-wrapper">
+                <div class="profile-icon" onclick="toggleProfileMenu()" id="profile-icon">U</div>
+                <div id="profile-dropdown" class="profile-dropdown hidden">
+                    <div class="profile-info">
+                        <div class="profile-circle" id="profile-letter">U</div>
+                        <div>
+                            <strong id="profile-display-name">User</strong><br>
+                            <small id="profile-display-phone"></small>
+                        </div>
+                    </div>
+                    <hr>
+                    <button onclick="logout()" style="width:100%; padding:8px; cursor:pointer;">Logout</button>
+                </div>
+            </div>
+            <button id="auth-nav-btn" class="btn-login-nav" onclick="showLogin()">Login</button>
+        </div>
+    </header>
+</body>
+</html>
