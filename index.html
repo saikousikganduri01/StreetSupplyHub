@@ -51,14 +51,38 @@ function googleTranslateElementInit() {
         </div>
 
         <hr>
+        <button onclick="openProfilePage()" class="profile-btn">
+    👤 Profile Settings
+</button>
 
-        <button onclick="logout()">Logout</button>
-    </div>
+       <button onclick="logout()" class="profile-btn logout-btn">
+    🚪 Logout
+</button>
 </div>
 
 <button id="auth-nav-btn" class="btn-login-nav" onclick="showLogin()">Login</button>
         </div>
     </header>
+    <div id="profile-page" class="hidden container">
+    <h2>👤 Profile Settings</h2>
+
+    <div class="profile-box">
+        <label>Name</label>
+        <input type="text" id="profile-edit-name" class="input-field">
+
+        <label>Phone</label>
+        <input type="text" id="profile-edit-phone" class="input-field">
+
+        <label>Business</label>
+        <input type="text" id="profile-edit-business" class="input-field">
+
+        <label>Address</label>
+        <textarea id="profile-edit-address" class="input-field"></textarea>
+
+        <button class="btn-primary" onclick="saveProfileChanges()">Save Changes</button>
+    </div>
+</div>
+    
 
     <div id="left-sidebar" class="sidebar-hidden">
         <div class="sidebar-header">
