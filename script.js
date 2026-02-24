@@ -1,24 +1,101 @@
+// --- DATA & STATE ---
 const PRODUCTS = [
     { id: 1, name: "Premium Maida (Flour)", price: 45, unit: "kg", moq: 50, category: "flour" },
     { id: 2, name: "Sunflower Oil Tin", price: 1650, unit: "tin", moq: 2, category: "oil" },
     { id: 3, name: "Red Onions", price: 34, unit: "kg", moq: 25, category: "vegetable" }
 ];
+
 const priceTrends = [
     { id: 1, lastPrice: 50 },
     { id: 2, lastPrice: 1600 },
     { id: 3, lastPrice: 30 }
 ];
+
 let cart = [];
-let appState = { isLoggedIn: false, role: 'vendor', userName: '' };
+let previousOrders = [];
+let pendingBargains = []; 
+let appState = { 
+    isLoggedIn: false, 
+    role: 'vendor', 
+    userName: '', 
+    phone: '' 
+};
 let groupOrders = {};
-// NAVIGATION
-function toggleSidebar() { document.getElementById('left-sidebar').classList.toggle('sidebar-hidden'); }
-function toggleCart() { document.getElementById('cart-sidebar').classList.toggle('cart-hidden'); }
+let currentBargainProduct = null;
+
+// NEW STATE
+let myFriends = [];
+let pendingRequests = [];
+const MOCK_USERS = ["Rahul123", "Priya_Store", "Kirana_King", "Fresh_Mart", "Amit_Wholesale"];
+
+function showGroupHub() {
+    hideAllPages();
+    document.getElementById('group-hub-page').classList.remove('hidden');
+    renderFriends();
+}
+
+function searchFriend() {
+    const query = document.getElementById('friend-search-input').value.trim();
+    const resultDiv = document.getElementById('search-result');
+    
+    if (MOCK_USERS.includes(query)) {
+        resultDiv.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#f0f0f0; padding:10px; border-radius:5px;">
+                <span>👤 ${query}</span>
+                <button class="btn-primary" style="width:auto; padding:5px 15px;" onclick="sendFriendRequest('${query}')">Add Friend</button>
+            </div>`;
+    } else {
+        resultDiv.innerHTML = `<p style="color:red;">User not found. Try: Rahul123</p>`;
+    }
+}
+
+function sendFriendRequest(name) {
+    alert(`Friend request sent to ${name}!`);
+    // Simulating instant acceptance for demo purposes
+    setTimeout(() => {
+        if (!myFriends.includes(name)) {
+            myFriends.push(name);
+            renderFriends();
+            updateGroupStatus();
+        }
+    }, 1000);
+}
+
+function renderFriends() {
+    const list = document.getElementById('friend-list');
+    if (myFriends.length === 0) {
+        list.innerHTML = `<li style="color:#888;">No friends added yet.</li>`;
+        return;
+    }
+    list.innerHTML = myFriends.map(f => `
+        <li style="padding:10px 0; border-bottom:1px solid #eee;">✅ ${f}</li>
+    `).join('');
+}
+
+function updateGroupStatus() {
+    const count = myFriends.length + 1; // +1 for the current user
+    document.getElementById('group-count').innerText = `Members: ${count}/5`;
+    document.getElementById('group-progress').value = count;
+    
+    if (count >= 5) {
+        document.getElementById('group-benefit').style.display = 'block';
+    }
+}
+
+// ---------------- NAVIGATION ----------------
+
+function toggleSidebar() {
+    document.getElementById('left-sidebar').classList.toggle('sidebar-hidden');
+}
+
+function toggleCart() {
+    document.getElementById('cart-sidebar').classList.toggle('cart-hidden');
+}
+
 function toggleProfileMenu() {
     const dropdown = document.getElementById('profile-dropdown');
     if (dropdown) dropdown.classList.toggle('hidden');
 }
-
 function goHome() {
     document.getElementById('profile-page').classList.add('hidden');
     document.getElementById('previous-orders-page').classList.add('hidden');
@@ -26,102 +103,129 @@ function goHome() {
     document.getElementById('auth-container').classList.add('hidden');
     document.getElementById('seller-dashboard').classList.add('hidden');
     document.getElementById('landing-page').classList.remove('hidden');
+    if (appState.role === 'supplier') {
+        if (document.querySelector('.cart-btn')) document.querySelector('.cart-btn').style.display = 'none';
+        const cc = document.getElementById('cart-count');
+        if (cc) cc.parentElement.style.display = 'none';
+    } else {
+        // Ensure cart is visible for Vendors
+        if (document.querySelector('.cart-btn')) document.querySelector('.cart-btn').style.display = 'block';
+        const cc = document.getElementById('cart-count');
+        if (cc) cc.parentElement.style.display = 'block';
+    }
 }
-
+// ---------------- AUTH & OTP ----------------
 function showLogin() {
-    document.getElementById('landing-page').classList.add('hidden');
     document.getElementById('auth-container').classList.remove('hidden');
     document.getElementById('login-page').classList.remove('hidden');
-        document.getElementById('register-page').classList.add('hidden');   // 🔥 add this
-    document.getElementById('registration-form').classList.add('hidden');
+    document.getElementById('landing-page').classList.add('hidden'); // Ensure marketplace is hidden
+    document.getElementById('seller-dashboard').classList.add('hidden'); // Ensure dashboard is hidden
+}
+function showRegister() {
+    document.getElementById('login-page').classList.add('hidden');
+    document.getElementById('register-page').classList.remove('hidden');
+}
+function selectRole(role) {
+    appState.role = role;
+    document.querySelectorAll('.role-block').forEach(b => b.classList.remove('active-role'));
+    document.getElementById('block-' + role).classList.add('active-role');
+    document.getElementById('registration-form').classList.remove('hidden');
+    
+    if(role === 'supplier') {
+        document.getElementById('supplier-product-section').classList.remove('hidden');
+    } else {
+        document.getElementById('supplier-product-section').classList.add('hidden');
+    }
 }
 
+function finalizeRegistration() {
 
-function login() {
+    const name = document.getElementById("reg-name").value.trim();
+    const business = document.getElementById("reg-biz").value.trim();
+    const address = document.getElementById("reg-addr").value.trim();
+
+    if (!name || !business || !address) {
+        alert("Please fill all details");
+        return;
+    }
+
+    // 🔥 SAVE INTO appState
+    appState.userName = name;
+    appState.business = business;
+    appState.address = address;
+    localStorage.setItem("userData", JSON.stringify(appState));
+
+    alert("Registration Successful. Please login.");
+    document.getElementById('register-page').classList.add('hidden'); // Hide registration
+    document.getElementById('login-page').classList.remove('hidden'); // Show login card
+
+}
+
+// NEW: OTP Functions
+function sendOTP() {
     const name = document.getElementById('login-name').value.trim();
     const phone = document.getElementById('login-phone').value.trim();
 
-    if (!name) return alert("Enter Name");
+    if (!name || phone.length < 10) {
+        return alert("Please enter your name and 10-digit phone number");
+    }
 
-    appState.isLoggedIn = true;
     appState.userName = name;
+    appState.phone = phone;
 
-    // Hide login screen
+    document.getElementById('login-initial-action').classList.add('hidden');
+    document.getElementById('otp-section').classList.remove('hidden');
+    alert("Demo OTP sent to " + phone + ". Use code: 1234");
+}
+
+function verifyOTP() {
+    const otp = document.getElementById('otp-input').value;
+    if (otp === "1234") {
+        login();
+    } else {
+        alert("Invalid OTP. Hint: 1234");
+    }
+}
+
+function login() {
+    appState.isLoggedIn = true;
+
     document.getElementById('auth-container').classList.add('hidden');
     document.getElementById('login-page').classList.add('hidden');
-
-    // Show landing page
     document.getElementById('landing-page').classList.remove('hidden');
-
-    // Hide Login button
     document.getElementById('auth-nav-btn').classList.add('hidden');
-
-    // 🔥 Show profile icon
     document.getElementById('profile-wrapper').classList.remove('hidden');
+    const displayName =  appState.userName;
+const firstLetter = displayName.charAt(0).toUpperCase();
 
-    // Set profile letter
-    const firstLetter = name.charAt(0).toUpperCase();
+document.getElementById('profile-display-name').innerText = appState.userName;
     document.getElementById('profile-icon').innerText = firstLetter;
     document.getElementById('profile-letter').innerText = firstLetter;
 
-    document.getElementById('profile-display-name').innerText = name;
-    document.getElementById('profile-display-phone').innerText = phone || "";
+    document.getElementById('profile-display-phone').innerText = appState.phone || "";
     document.getElementById('menu-btn').classList.remove('hidden');
+    
 
     setupSidebar();
     renderProducts();
     renderTrendSection();
 
-    document.getElementById('hero-section').innerHTML =
-        `<h1>Welcome back, ${name}!</h1>
-         <p>Start your bulk procurement today.</p>`;
-}
-function showRegister() {
-    document.getElementById('login-page').classList.add('hidden');
-    document.getElementById('register-page').classList.remove('hidden');
-    document.getElementById('registration-form').classList.add('hidden');
-}
-
-function selectRole(role) {
-    appState.role = role;
-    document.getElementById('registration-form').classList.remove('hidden');
-    document.querySelectorAll('.role-block').forEach(b => b.classList.remove('active-role'));
-    document.getElementById('block-' + role).classList.add('active-role');
-    
-    const supplierSection = document.getElementById('supplier-product-section');
-    if(role === 'supplier') supplierSection.classList.remove('hidden');
-    else supplierSection.classList.add('hidden');
-}
-
-function finalizeRegistration() {
-    const name = document.getElementById('reg-name').value.trim();
-    const business = document.getElementById('reg-biz').value.trim();
-    const addr = document.getElementById('reg-addr').value.trim();
-    const aadhaarInput = document.getElementById('reg-aadhaar');
-
-    if (!name || !business || !addr || !aadhaarInput.files.length) {
-        alert("Please fill all details and upload Aadhaar");
-        return;
+if (appState.role === "supplier") {
+        // --- ADD THESE TWO LINES HERE ---
+        if (document.querySelector('.cart-btn')) document.querySelector('.cart-btn').style.display = 'none';
+        if (document.getElementById('cart-count')) document.getElementById('cart-count').parentElement.style.display = 'none';
+        
+        // --- YOUR EXISTING LOGIC ---
+        document.getElementById('landing-page').classList.add('hidden'); 
+        showSellerDashboard(); 
+    } else {
+        // --- YOUR EXISTING LOGIC ---
+        document.getElementById('landing-page').classList.remove('hidden'); 
+        document.getElementById('seller-dashboard').classList.add('hidden');
+        document.getElementById('hero-section').innerHTML = 
+            `<h1>Welcome back, ${appState.userName}!</h1>
+             <p>Start your bulk procurement today with Direct Bargaining.</p>`;
     }
-
-    // Simulate saving user
-    alert("🎉 Account Created Successfully!\nPlease login to continue.");
-
-    // Clear form fields
-    document.getElementById('reg-name').value = "";
-    document.getElementById('reg-biz').value = "";
-    document.getElementById('reg-addr').value = "";
-    document.getElementById('reg-aadhaar').value = "";
-
-    // Reset form visibility
-    document.getElementById('registration-form').classList.add('hidden');
-    document.getElementById('register-page').classList.add('hidden');
-
-    // Go back to login page
-    showLogin();
-}
-function toggleProfileMenu() {
-    document.getElementById('profile-dropdown').classList.toggle('hidden');
 }
 function saveProfileChanges() {
 
@@ -137,206 +241,273 @@ function saveProfileChanges() {
     appState.address = newAddress;
 
     // Update dropdown display
+    const displayName = appState.business || appState.userName;
     document.getElementById('profile-display-name').innerText = newName;
     document.getElementById('profile-display-phone').innerText = newPhone;
 
     const firstLetter = newName.charAt(0).toUpperCase();
     document.getElementById('profile-icon').innerText = firstLetter;
     document.getElementById('profile-letter').innerText = firstLetter;
+    localStorage.setItem("userData", JSON.stringify(appState));
+
+document.getElementById('hero-section').innerHTML =
+    `<h1>Welcome back, ${displayName}!</h1>
+     <p>Start your bulk procurement today with Direct Bargaining.</p>`;
 
     alert("Profile Updated Successfully!");
 }
+function openProfilePage() {
+    hideAllPages();
+    document.getElementById("landing-page").classList.add("hidden");
+    document.getElementById("previous-orders-page").classList.add("hidden");
+    document.getElementById("tracking-page")?.classList.add("hidden");
+    document.getElementById("seller-dashboard").classList.add("hidden");
+
+    document.getElementById("profile-page").classList.remove("hidden");
+
+    document.getElementById("profile-edit-name").value = appState.userName || "";
+    document.getElementById("profile-edit-phone").value = appState.phone || "";
+    document.getElementById("profile-edit-business").value = appState.business || "";
+    document.getElementById("profile-edit-address").value = appState.address || "";
+}
+
+function openOrdersPage() {
+
+    // Hide everything
+    document.getElementById("landing-page").classList.add("hidden");
+    document.getElementById("profile-page").classList.add("hidden");
+    document.getElementById("tracking-page")?.classList.add("hidden");
+    document.getElementById("seller-dashboard").classList.add("hidden");
+
+    // Show orders page
+    document.getElementById("previous-orders-page").classList.remove("hidden");
+
+    toggleProfileMenu();
+}
+
 function logout() {
+    localStorage.removeItem("userData");
     location.reload();
 }
 
+// ---------------- SIDEBAR ----------------
 
-// SIDEBAR CONTENT BASED ON ROLE
 function setupSidebar() {
-    const sidebar = document.getElementById('sidebar-content');
-    if(appState.role === 'vendor') {
-        sidebar.innerHTML = `
-            <a href="#">📦 Previous Orders</a>
-            <a href="#">📍 Tracking Orders</a>
-            <a href="#">⭐ Saved Suppliers</a>
-            <a href="#">⚙️ Profile Settings</a>
+    const sidebarContent = document.getElementById('sidebar-content');
+    if (appState.role === 'supplier') {
+        sidebarContent.innerHTML = `
+            <a href="#" onclick="goHome(); toggleSidebar();">🏪 Marketplace</a>
+            <a href="#" onclick="showSalesOverview(); toggleSidebar();">📈 Sales Overview</a>
+            <a href="#" onclick="showManageInventory(); toggleSidebar();">📦 Manage Inventory</a>
+            <a href="#" onclick="showSellerDashboard(); toggleSidebar();">🤝 Bargain Requests</a>
+            <a href="#" onclick="showPastCustomers(); toggleSidebar();">👥 Past Customers</a>
+            <hr style="border:0; border-top:1px solid #444; margin:10px 0;">
+            <a href="#" onclick="showAbout(); toggleSidebar();">ℹ️ About Us</a>
         `;
     } else {
-        sidebar.innerHTML = `
-            <a href="#">📊 Sales Overview</a>
-            <a href="#">📦 Manage Inventory</a>
-            <a href="#">👥 Customer List</a>
+        sidebarContent.innerHTML = `
+            <a href="#" onclick="goHome()">🏠 Home</a>
+            <a href="#" onclick="showPreviousOrders()">📦 My Orders</a>
+            <a href="#" onclick="showTrackingPage()">📍 Track Orders</a>
+            <a href="#" onclick="showGroupHub(); toggleSidebar();">👥 Group Hub (Add Friends)
+            <a href="#" onclick="showAbout(); toggleSidebar();">ℹ️ About Us</a>
         `;
     }
 }
 
-// SELLER DASHBOARD VIEW
-function showSellerDashboard() {
-    document.getElementById('landing-page').classList.add('hidden');
-    const dash = document.getElementById('seller-dashboard');
-    dash.classList.remove('hidden');
+// ---------------- PRODUCTS & FILTERING ----------------
+
+// 1. The "Manager" - Logic & Filtering
+function renderProducts(filter = "") {
+    const grid = document.getElementById('product-list');
+    if (!grid) return; 
+    grid.innerHTML = ""; 
+    PRODUCTS
+        .filter(p => p.name.toLowerCase().includes(filter.toLowerCase()))
+        .forEach(renderProductCard); // Calls the builder below
+}
+
+// 2. The "Builder" - HTML & Role-based UI
+function renderProductCard(p) {
+    const grid = document.getElementById("product-list");
     
-    dash.innerHTML = `
-        <div class="card">
-            <h3>📦 Current Stock Inventory</h3>
-            <p>Maida: 500kg | Oil: 40 Tins | Onions: 200kg</p>
+    // Check if the user is a supplier to hide buying features
+    const isSupplier = (appState.role === 'supplier');
+
+    grid.innerHTML += `
+        <div class="prod-card">
+            <span class="moq-tag">MOQ: ${p.moq} ${p.unit}</span>
+            <h3>${p.name}</h3>
+            <p class="price">₹${p.price} / ${p.unit}</p>
+
+            ${isSupplier ? `
+                <div class="view-only-tag" style="background:#f9f9f9; color:#777; padding:10px; text-align:center; border-radius:5px; margin:10px 0; font-size:0.8rem; border:1px solid #ddd;">
+                    👁️ Supplier View (No Purchasing)
+                </div>
+            ` : `
+                <div class="add-cart-row">
+                    <button class="qty-btn" onclick="changeQty(${p.id}, -1)">−</button>
+                    <button class="btn-primary add-btn" onclick="addToCart(${p.id})">
+                        Add (<span id="qty-${p.id}">${p.moq}</span>)
+                    </button>
+                    <button class="qty-btn" onclick="changeQty(${p.id}, 1)">+</button>
+                </div>
+                <button class="group-btn" style="background:#444;" onclick="openBargain(${p.id})">🤝 Bargain Price</button>
+                <button class="group-btn" onclick="createGroupOrder(${p.id})">Create Group Order</button>
+            `}
+
+            <button class="group-btn join-btn hidden" id="join-btn-${p.id}" onclick="joinGroupOrder(${p.id})">Join Group Order</button>
+            <p id="group-status-${p.id}" class="group-status hidden">Current Group: 0 ${p.unit}</p>
         </div>
-        <h3>🛒 Recent Vendor Purchases</h3>
-        <table class="seller-table">
-            <thead>
-                <tr><th>Vendor Name</th><th>Product</th><th>Qty</th><th>Amount</th></tr>
-            </thead>
-            <tbody>
-                <tr><td>Raju's Snacks</td><td>Premium Maida</td><td>100kg</td><td>₹4,500</td></tr>
-                <tr><td>Sai Tiffin Center</td><td>Sunflower Oil</td><td>4 Tins</td><td>₹6,600</td></tr>
-            </tbody>
-        </table>
     `;
 }
 
-// PRODUCT RENDERING
-function renderProducts(filter = "") {
-    const grid = document.getElementById('product-list');
+function filterCategory(category) {
+    if (category === "all") {
+        renderProducts();
+        return;
+    }
+    const grid = document.getElementById("product-list");
     grid.innerHTML = "";
-
-    PRODUCTS
-        .filter(p => p.name.toLowerCase().includes(filter.toLowerCase()))
-        .forEach(p => {
-
-            grid.innerHTML += `
-                <div class="prod-card">
-                    <span class="moq-tag">MOQ: ${p.moq} ${p.unit}</span>
-                    <h3>${p.name}</h3>
-                    <p class="price">₹${p.price} / ${p.unit}</p>
-
-                    <div class="add-cart-row">
-                        <button class="qty-btn" onclick="changeQty(${p.id}, -1)">−</button>
-
-                        <button class="btn-primary add-btn"
-                                onclick="addToCart(${p.id})">
-                            Add (${p.moq}) 
-                            
-                            <span id="qty-${p.id}">${p.moq}</span>
-                        </button>
-
-                        <button class="qty-btn" onclick="changeQty(${p.id}, 1)">+</button>
-                    </div>
-         <button class="group-btn" onclick="createGroupOrder(${p.id})">
-    Create Group Order
-</button>
-
-<button class="group-btn join-btn hidden" 
-        id="join-btn-${p.id}"
-        onclick="joinGroupOrder(${p.id})">
-    Join Group Order
-</button>
-
-<p id="group-status-${p.id}" class="group-status hidden">
-    Current Group: 0 ${p.unit}
-</p>
-                </div>
-            `;
-        });
+    PRODUCTS.filter(p => p.category === category).forEach(renderProductCard);
 }
+
+function filterProducts() {
+    const val = document.getElementById('landing-search').value;
+    renderProducts(val);
+}
+
+function renderProductCard(p) {
+    const grid = document.getElementById("product-list");
+    grid.innerHTML += `
+        <div class="prod-card">
+            <span class="moq-tag">MOQ: ${p.moq} ${p.unit}</span>
+            <h3>${p.name}</h3>
+            <p class="price">₹${p.price} / ${p.unit}</p>
+
+            <div class="add-cart-row">
+                <button class="qty-btn" onclick="changeQty(${p.id}, -1)">−</button>
+                <button class="btn-primary add-btn" onclick="addToCart(${p.id})">
+                    Add (<span id="qty-${p.id}">${p.moq}</span>)
+                </button>
+                <button class="qty-btn" onclick="changeQty(${p.id}, 1)">+</button>
+            </div>
+
+            <button class="group-btn" style="background:#444;" onclick="openBargain(${p.id})">🤝 Bargain Price</button>
+            <button class="group-btn" onclick="createGroupOrder(${p.id})">Create Group Order</button>
+            <button class="group-btn join-btn hidden" id="join-btn-${p.id}" onclick="joinGroupOrder(${p.id})">Join Group Order</button>
+            <p id="group-status-${p.id}" class="group-status hidden">Current Group: 0 ${p.unit}</p>
+        </div>
+    `;
+}
+
+// ---------------- BARGAINING (NEW) ----------------
+
+function openBargain(pid) {
+    if (!appState.isLoggedIn) {
+        alert("Please login to bargain with suppliers.");
+        showLogin();
+        return;
+    }
+    currentBargainProduct = PRODUCTS.find(p => p.id === pid);
+    document.getElementById('bargain-prod-name').innerText = currentBargainProduct.name;
+    document.getElementById('current-price-display').innerText = "₹" + currentBargainProduct.price + " / " + currentBargainProduct.unit;
+    document.getElementById('bargain-modal').classList.remove('hidden');
+}
+
+function closeBargain() {
+    document.getElementById('bargain-modal').classList.add('hidden');
+}
+
+function submitBargain() {
+    const offer = document.getElementById('offer-price').value;
+    const qty = document.getElementById('offer-qty').value;
+    
+    if (!offer || !qty) return alert("Please enter your offer price and quantity.");
+
+    pendingBargains.push({
+        vendor: appState.userName,
+        product: currentBargainProduct.name,
+        original: currentBargainProduct.price,
+        offer: offer,
+        qty: qty
+    });
+
+    alert("Your offer of ₹" + offer + " has been sent to the supplier!");
+    closeBargain();
+}
+
+// ---------------- GROUP ORDER ----------------
+
 function createGroupOrder(pid) {
     const product = PRODUCTS.find(p => p.id === pid);
-
     groupOrders[pid] = product.moq;
-
-    // Show join button
     document.getElementById(`join-btn-${pid}`).classList.remove("hidden");
-
-    // Show status
     const status = document.getElementById(`group-status-${pid}`);
     status.classList.remove("hidden");
     status.innerText = "Current Group: " + groupOrders[pid] + " " + product.unit;
-
     alert("Group Order Created 🎉");
 }
+
+function joinGroupOrder(pid) {
+    const product = PRODUCTS.find(p => p.id === pid);
+    if (!groupOrders[pid]) return;
+    groupOrders[pid] += product.moq;
+    document.getElementById(`group-status-${pid}`).innerText = "Current Group: " + groupOrders[pid] + " " + product.unit;
+    if (groupOrders[pid] >= product.moq * 3) {
+        alert("🎉 MOQ Achieved! Group Order Ready!");
+    }
+}
+
+// ---------------- CART & QUANTITY ----------------
+
 function changeQty(pid, direction) {
     const product = PRODUCTS.find(p => p.id === pid);
     const qtyEl = document.getElementById(`qty-${pid}`);
     let qty = parseInt(qtyEl.innerText);
-
-    if (direction === 1) {
-        qty += product.moq;
-    } else {
-        if (qty > product.moq) {
-            qty -= product.moq;
-        }
-    }
-
+    if (direction === 1) qty += product.moq;
+    else if (qty > product.moq) qty -= product.moq;
     qtyEl.innerText = qty;
 }
-
-function filterProducts() { renderProducts(document.getElementById('landing-search').value); }
 
 function addToCart(pid) {
     const product = PRODUCTS.find(p => p.id === pid);
     const selectedQty = parseInt(document.getElementById(`qty-${pid}`).innerText);
-
     const existing = cart.find(x => x.id === pid);
-
-    if (existing) {
-        existing.qty += selectedQty;
-    } else {
-        cart.push({ ...product, qty: selectedQty });
-    }
-
+    if (existing) existing.qty += selectedQty;
+    else cart.push({ ...product, qty: selectedQty });
     updateCartUI();
 }
 
 function updateCartUI() {
     document.getElementById('cart-count').innerText = cart.length;
     const container = document.getElementById('cart-items');
+    const totalFooter = document.getElementById('cart-total-footer');
 
-    if(cart.length === 0) {
+    if (cart.length === 0) {
         container.innerHTML = `<p style="padding:20px; text-align:center;">Empty</p>`;
+        if(totalFooter) totalFooter.innerText = "";
         return;
     }
 
-    let html = cart.map((item, index) => `
-        <div class="cart-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #eee;">
-            
-            <div>
-                <b>${item.name}</b><br>
-                <small>${item.qty} ${item.unit}</small>
-            </div>
-
-            <div style="text-align:right;">
-                <div>₹${item.qty * item.price}</div>
-                <span onclick="removeFromCart(${index})"
-                      style="cursor:pointer; color:red; font-size:18px;">
-                      ❌
-                </span>
-            </div>
-
-        </div>
-    `).join('');
-
-    container.innerHTML = html;
+    let total = 0;
+    container.innerHTML = cart.map((item, index) => {
+        total += item.qty * item.price;
+        return `
+            <div class="cart-item">
+                <div><b>${item.name}</b><br><small>${item.qty} ${item.unit}</small></div>
+                <div>₹${item.qty * item.price} <span onclick="removeFromCart(${index})" style="cursor:pointer;color:red;">❌</span></div>
+            </div>`;
+    }).join('');
+    if(totalFooter) totalFooter.innerText = "Total: ₹" + total;
 }
+
 function removeFromCart(index) {
     cart.splice(index, 1);
     updateCartUI();
 }
-function joinGroupOrder(pid) {
-    const product = PRODUCTS.find(p => p.id === pid);
 
-    if (!groupOrders[pid]) {
-        alert("No group order exists. Please create one first.");
-        return;
-    }
-
-    groupOrders[pid] += product.moq;
-
-    document.getElementById(`group-status-${pid}`).innerText =
-        "Current Group: " + groupOrders[pid] + " " + product.unit;
-
-    if (groupOrders[pid] >= product.moq * 3) {
-        alert("🎉 MOQ Achieved! Group Order Ready to Place!");
-    }
-}
+// ---------------- ORDER FLOW (CHECKOUT FIX) ----------------
 
 function placeOrder() {
     if (!appState.isLoggedIn) {
@@ -344,178 +515,392 @@ function placeOrder() {
         showLogin();
         return;
     }
-
+    // Block Suppliers from purchasing
+    if (appState.role === 'supplier') {
+        alert("Suppliers cannot place orders. Please use a Vendor account.");
+        return;
+    }
     if (cart.length === 0) {
         alert("Cart is empty");
         return;
     }
-
     showLoanOptions();
 }
+
 function showLoanOptions() {
-    const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    let originalTotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    
+    // 🔥 NEW: Group Discount Logic
+    // Current user (1) + My Friends list
+    const memberCount = (myFriends ? myFriends.length : 0) + 1; 
+    const hasGroupDiscount = memberCount >= 5;
+    const finalTotal = hasGroupDiscount ? (originalTotal * 0.9) : originalTotal;
 
-    const popup = document.createElement("div");
-    popup.id = "loan-popup";
-    popup.className = "loan-popup";
+    let popup = document.getElementById("loan-popup-dynamic");
+    if(!popup){
+        popup = document.createElement("div");
+        popup.id = "loan-popup-dynamic";
+        popup.className = "loan-popup";
+        document.body.appendChild(popup);
+    }
 
+    popup.classList.remove('hidden');
     popup.innerHTML = `
         <div class="loan-box">
             <h3>Choose Payment Option</h3>
-            <p>Total Amount: ₹${total}</p>
+            
+            ${hasGroupDiscount ? `
+                <p style="color:#27ae60; font-weight:bold; margin-bottom:5px;">
+                    🎉 Group Discount Applied (5+ Members)
+                </p>
+                <p>Original: <del>₹${originalTotal}</del></p>
+                <p>Total Amount: <strong style="font-size:1.4rem;">₹${finalTotal.toFixed(2)}</strong></p>
+            ` : `
+                <p>Total Amount: <strong>₹${originalTotal}</strong></p>
+                <p style="font-size:0.8rem; color:#666;">
+                    Tip: Add ${5 - memberCount} more friends to unlock 10% discount!
+                </p>
+            `}
 
-            <button onclick="payFull(${total})">Pay Full</button>
-            <button onclick="payHalf(${total})">Pay 50% Now (₹${total/2})</button>
-            <button onclick="payLater(${total})">7-Day Microloan</button>
-
-            <br><br>
-            <button onclick="closeLoanPopup()">Cancel</button>
+            <button class="btn-primary" onclick="payFull(${finalTotal})">Pay Full</button>
+            <button class="btn-primary" style="background:#f39c12; margin-top:10px;" onclick="payLater(${finalTotal})">7-Day Microloan</button>
+            <button class="btn-primary" style="background:#ccc; color:#333; margin-top:10px;" onclick="closeLoanPopup()">Cancel</button>
         </div>
     `;
-
-    document.body.appendChild(popup);
-}
-function payFull(total) {
-    alert("Payment Successful! ₹" + total + " Paid.");
-    finalizeOrder();
 }
 
-function payHalf(total) {
-    alert("₹" + (total/2) + " Paid Now.\nRemaining Due in 7 Days.");
-    finalizeOrder();
-}
+function payFull(total) { alert("Payment Successful! ₹" + total + " Paid."); finalizeOrder("Paid"); }
+function payLater(total) { alert("Microloan Approved! ₹" + total + " Due in 7 Days."); finalizeOrder("Credit"); }
 
-function payLater(total) {
-    alert("Microloan Approved! ₹" + total + " Due in 7 Days.");
-    finalizeOrder();
-}
-
-function finalizeOrder() {
+function finalizeOrder(paymentStatus) {
+    const order = {
+        id: "ORD" + Math.floor(Math.random() * 100000),
+        customerName: appState.userName, // Added this line
+        items: [...cart],
+        total: cart.reduce((sum, item) => sum + (item.price * item.qty), 0),
+        status: "Processing",
+        payment: paymentStatus
+    };
+    previousOrders.push(order);
     cart = [];
     updateCartUI();
     closeLoanPopup();
+    if(document.getElementById('cart-sidebar').classList.contains('cart-hidden') === false) toggleCart(); 
+    alert("✅ Order Placed Successfully!");
+    showPreviousOrders();
 }
+
 function closeLoanPopup() {
-    const popup = document.getElementById("loan-popup");
-    if (popup) popup.remove();
+    const popup = document.getElementById("loan-popup-dynamic");
+    if (popup) popup.classList.add('hidden');
 }
-function filterCategory(category) {
-    if (category === "all") {
-        renderProducts();
-        return;
-    }
 
-    const grid = document.getElementById("product-list");
-    grid.innerHTML = "";
+// ---------------- PAGES & DASHBOARDS ----------------
 
-    PRODUCTS
-        .filter(p => p.category === category)
-        .forEach(p => {
-            grid.innerHTML += `
-                <div class="prod-card">
-                    <span class="moq-tag">MOQ: ${p.moq} ${p.unit}</span>
-                    <h3>${p.name}</h3>
-                    <p class="price">₹${p.price} / ${p.unit}</p>
+function showPreviousOrders() {
+    goHome();
+    document.getElementById('landing-page').classList.add('hidden');
+    document.getElementById('previous-orders-page').classList.remove('hidden');
 
-                    <div class="add-cart-row">
-                        <button class="qty-btn" onclick="changeQty(${p.id}, -1)">−</button>
-
-                        <button class="btn-primary add-btn"
-                                onclick="addToCart(${p.id})">
-                            Add (${p.moq}) 
-                            <span id="qty-${p.id}">${p.moq}</span>
-                        </button>
-
-                        <button class="qty-btn" onclick="changeQty(${p.id}, 1)">+</button>
-                    </div>
-                </div>
-            `;
-        });
+    const container = document.getElementById('previous-orders-list');
+    container.innerHTML = previousOrders.length ? previousOrders.map(o => `
+        <div class="prod-card">
+            <h3>Order ID: ${o.id}</h3>
+            <p><strong>Customer:</strong> ${o.customerName || "Me"}</p>
+            <p><strong>Status:</strong> ${o.status}</p>
+            <p><strong>Payment:</strong> ${o.payment}</p>
+            <p><strong>Total:</strong> ₹${o.total}</p>
+        </div>`).join('') : "<p>No orders found.</p>";
 }
-function renderTrendSection() {
-    const trendList = document.getElementById("trend-list");
-    trendList.innerHTML = "";
 
-    priceTrends.forEach(t => {
-        const product = PRODUCTS.find(p => p.id === t.id);
-        if (!product) return;
+function showTrackingPage() {
+    goHome();
+    // Hide all other sections
+    document.getElementById('landing-page').classList.add('hidden');
+    document.getElementById('profile-page').classList.add('hidden');
+    document.getElementById('previous-orders-page').classList.add('hidden');
+    document.getElementById('seller-dashboard').classList.add('hidden');
+    
+    // Show tracking page
+    document.getElementById('tracking-page').classList.remove('hidden');
 
-        const diff = product.price - t.lastPrice;
-        const percent = ((diff / t.lastPrice) * 100).toFixed(1);
-        const direction = diff >= 0 ? "up" : "down";
-
-        trendList.innerHTML += `
-            <div class="trend-card">
-                <h4>${product.name}</h4>
-                <p>
-                   <span class="${direction}">
-                     ${direction === "up" ? "⬆" : "⬇"} ₹${Math.abs(diff)}
-                   </span>
-                </p>
-                <small>${percent}% ${direction === "up" ? "increase" : "decrease"}</small>
+    const container = document.getElementById('tracking-list');
+    container.innerHTML = previousOrders.length ? previousOrders.map(o => `
+        <div class="prod-card">
+            <h3>Order ID: ${o.id}</h3>
+            <p>Status: 🚚 ${o.status}</p>
+            <div style="background: #eee; border-radius: 10px; height: 10px; width: 100%; margin: 10px 0;">
+                <div style="background: #27ae60; width: 50%; height: 100%; border-radius: 10px;"></div>
             </div>
-        `;
+            <p><small>Estimated Delivery: 2 Days</small></p>
+        </div>`).join('') : "<p style='padding:20px; text-align:center;'>No active orders to track.</p>";
+}
+
+function showSellerDashboard() {
+    // This now acts as the "Bargain Requests" page
+    const dash = document.getElementById('seller-dashboard');
+    dash.classList.remove('hidden');
+    document.getElementById('landing-page').classList.add('hidden');
+
+    let rows = pendingBargains.map((b, i) => `
+        <tr>
+            <td>${b.vendor}</td>
+            <td>${b.product}</td>
+            <td>₹${b.offer}</td>
+            <td>${b.qty}</td>
+            <td><button onclick="pendingBargains.splice(${i},1); showSellerDashboard();" style="color:green; cursor:pointer;">Accept</button></td>
+        </tr>`).join('');
+
+    dash.innerHTML = `
+        <div class="container">
+            <h2>🤝 Bargain Requests</h2>
+            <div class="trend-section">
+                <table class="seller-table">
+                    <thead><tr><th>Vendor</th><th>Product</th><th>Offer</th><th>Qty</th><th>Action</th></tr></thead>
+                    <tbody>${rows || '<tr><td colspan="5">No active requests</td></tr>'}</tbody>
+                </table>
+            </div>
+        </div>`;
+}
+
+// NEW FUNCTION: PAST CUSTOMERS
+function showPastCustomers() {
+    hideAllPages();
+    const dash = document.getElementById('seller-dashboard');
+    dash.classList.remove('hidden');
+
+    // Filter unique customer names from all orders
+    const customers = [...new Set(previousOrders.map(order => order.customerName || "Regular Vendor"))];
+
+    dash.innerHTML = `
+        <div class="container">
+            <h2>👥 Past Customers List</h2>
+            <div class="trend-section" style="padding:20px;">
+                <table class="seller-table">
+                    <thead>
+                        <tr>
+                            <th>Customer Name</th>
+                            <th>Total Orders</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${customers.length > 0 ? customers.map(name => `
+                            <tr>
+                                <td><strong>${name}</strong></td>
+                                <td>${previousOrders.filter(o => (o.customerName || "Regular Vendor") === name).length}</td>
+                                <td>
+                                    <button class="btn-primary" style="padding:5px 10px; width:auto;" onclick="alert('Messaging ${name}...')">💬 Message</button>
+                                </td>
+                            </tr>
+                        `).join('') : '<tr><td colspan="3">No past customers found yet.</td></tr>'}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+// Logic for Manage Inventory
+function processAddProduct() {
+    const name = document.getElementById('add-name').value;
+    const price = document.getElementById('add-price').value;
+    const qty = document.getElementById('add-qty').value;
+    const img = document.getElementById('add-img').value;
+
+    if (!name || !price || !qty) return alert("Please fill Name, Price, and Quantity!");
+
+    const newProduct = {
+        id: Date.now(),
+        name: name,
+        price: parseFloat(price),
+        unit: "units",
+        moq: parseInt(qty),
+        image: img || "https://via.placeholder.com/150",
+        category: "general"
+    };
+
+    PRODUCTS.push(newProduct);
+    alert("Product added successfully!");
+    showManageInventory();
+    renderProducts();
+}
+
+function updateProduct(index, field, value) {
+    PRODUCTS[index][field] = parseFloat(value);
+    renderProducts(); // Update marketplace
+    alert("Updated successfully!");
+}
+
+function deleteProduct(index) {
+    if(confirm("Remove this product?")) {
+        PRODUCTS.splice(index, 1);
+        showManageInventory();
+        renderProducts();
+    }
+}
+
+function showAbout() {
+    // Hide all other sections first
+    hideAllPages();
+    
+    // Show the about page
+    document.getElementById('about-page').classList.remove('hidden');
+}
+
+function hideAllPages() {
+    const pages = [
+        'landing-page', 
+        'seller-dashboard', 
+        'previous-orders-page', 
+        'tracking-page', 
+        'profile-page', 
+        'auth-container',
+        'about-page',
+        'group-hub-page'
+    ];
+    
+    pages.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
     });
 }
-// --- CHATBOT LOGIC ---
 
-function toggleChatWindow() {
-    const window = document.getElementById('chat-window');
-    window.classList.toggle('hidden');
-}
-
-function handleChatKey(event) {
-    if (event.key === "Enter") sendChatMessage();
-}
-
-async function sendChatMessage() {
-    const input = document.getElementById('chat-input');
-    const message = input.value.trim();
-    
-    // 1. Guard clause: Don't send empty messages
-    if (!message) return;
-
-    // 2. Display user message in the chat body
-    const chatBody = document.getElementById('chat-body');
-    chatBody.innerHTML += `<div class="user-msg">${message}</div>`;
-    
-    // 3. Clear input and scroll to bottom
-    input.value = "";
-    chatBody.scrollTop = chatBody.scrollHeight;
-
-    // 4. Create a unique ID for the "Thinking..." bubble
-    const thinkingId = "think-" + Date.now();
-    chatBody.innerHTML += `<div class="bot-msg" id="${thinkingId}">...</div>`;
-    chatBody.scrollTop = chatBody.scrollHeight;
-
-    try {
-        // 5. Fetch response from your Python Backend
-        const response = await fetch('http://127.0.0.1:5000/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: message })
-        });
-        
-        if (!response.ok) throw new Error("Server error");
-        
-        const data = await response.json();
-        
-        // 6. Format the reply: Replace **text** with <b>text</b>
-        const formattedReply = data.reply.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
-        
-        // 7. Update the thinking bubble with the actual formatted response
-        document.getElementById(thinkingId).innerHTML = formattedReply;
-
-    } catch (error) {
-        // Handle connection errors gracefully
-        console.error("Chat Error:", error);
-        document.getElementById(thinkingId).innerText = "Sorry, I'm having trouble connecting to the market database.";
-    }
-    
-    chatBody.scrollTop = chatBody.scrollHeight;
-}
-// Initial Call
 window.onload = () => {
-    renderTrendSection(); 
+    const savedUser = localStorage.getItem("userData");
+
+    if (savedUser) {
+        appState = JSON.parse(savedUser);
+
+        if (appState.isLoggedIn) {
+            // --- USER IS LOGGED IN ---
+            document.getElementById('profile-wrapper').classList.remove('hidden');
+            document.getElementById('auth-nav-btn').classList.add('hidden');
+            document.getElementById('menu-btn').classList.remove('hidden');
+            document.getElementById('auth-container').classList.add('hidden'); // Hide Login UI
+
+            const displayName = appState.userName;
+            const firstLetter = displayName.charAt(0).toUpperCase();
+
+            document.getElementById('profile-display-name').innerText = displayName;
+            document.getElementById('profile-display-phone').innerText = appState.phone || "";
+            document.getElementById('profile-icon').innerText = firstLetter;
+            document.getElementById('profile-letter').innerText = firstLetter;
+            
+            setupSidebar();
+
+            if (appState.role === "supplier") {
+                // SUPPLIER VIEW: Hide marketplace, show dashboard
+                document.getElementById('landing-page').classList.add('hidden');
+                showSellerDashboard();
+            } else {
+                // VENDOR VIEW: Show marketplace, show welcome message
+                document.getElementById('landing-page').classList.remove('hidden');
+                document.getElementById('hero-section').innerHTML =
+                    `<h1>Welcome back, ${displayName}!</h1>
+                     <p>Start your bulk procurement today with Direct Bargaining.</p>`;
+            }
+        } else {
+            // User data exists but isLoggedIn is false
+            showLogin();
+        }
+    } else {
+        // --- NO USER DATA: SHOW LOGIN FIRST ---
+        showLogin();
+    }
+
+    renderTrendSection();
     renderProducts();
 };
+
+function renderTrendSection() {
+    const trendList = document.getElementById("trend-list");
+    if(!trendList) return;
+    trendList.innerHTML = priceTrends.map(t => {
+        const product = PRODUCTS.find(p => p.id === t.id);
+        if(!product) return '';
+        const diff = product.price - t.lastPrice;
+        const dir = diff >= 0 ? "up" : "down";
+        return `
+            <div class="trend-card">
+                <h4>${product.name}</h4>
+                <p><span class="${dir}">${dir === "up" ? "⬆" : "⬇"} ₹${Math.abs(diff)}</span></p>
+                <small>${((diff / t.lastPrice) * 100).toFixed(1)}% change</small>
+            </div>`;
+    }).join('');
+}
+
+function showSalesOverview() {
+    hideAllPages();
+    const dash = document.getElementById('seller-dashboard');
+    dash.classList.remove('hidden');
+    document.getElementById('landing-page').classList.add('hidden');
+
+    dash.innerHTML = `
+        <div class="container">
+            <h2>📊 Sales & Stock Overview</h2>
+            <div class="trend-section">
+                <h3>Current Inventory Status</h3>
+                <table class="seller-table">
+                    <thead>
+                        <tr><th>Product</th><th>Original Stock</th><th>Current Stock</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        ${PRODUCTS.map(p => {
+                            const stockStatus = p.moq < 10 ? '<span style="color:red">Low Stock</span>' : '<span style="color:green">Healthy</span>';
+                            return `<tr>
+                                <td>${p.name}</td>
+                                <td>100 ${p.unit}</td> <td>${p.moq} ${p.unit}</td>
+                                <td>${stockStatus}</td>
+                            </tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+function showManageInventory() {
+    hideAllPages(); 
+    const dash = document.getElementById('seller-dashboard');
+    dash.classList.remove('hidden'); 
+    
+    dash.innerHTML = `
+        <div class="container">
+            <h2>📦 Manage Inventory</h2>
+            
+            <div class="trend-section" style="padding:20px; margin-bottom:20px;">
+                <h3>Add New Product</h3>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <input type="text" id="add-name" class="input-field" placeholder="Product Name">
+                    <input type="number" id="add-price" class="input-field" placeholder="Price (₹)">
+                    <input type="number" id="add-qty" class="input-field" placeholder="Stock Quantity">
+                    <input type="text" id="add-img" class="input-field" placeholder="Image URL">
+                </div>
+                <button class="btn-primary" onclick="processAddProduct()" style="margin-top:10px;">➕ Add Product</button>
+            </div>
+
+            <div class="trend-section">
+                <h3>Existing Inventory</h3>
+                <table class="seller-table">
+                    <thead>
+                        <tr><th>Product</th><th>Price (₹)</th><th>Qty</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        ${PRODUCTS.map((p, i) => `
+                            <tr>
+                                <td>${p.name}</td>
+                                <td><input type="number" value="${p.price}" onchange="updateProduct(${i}, 'price', this.value)" style="width:60px;"></td>
+                                <td><input type="number" value="${p.moq}" onchange="updateProduct(${i}, 'moq', this.value)" style="width:60px;"></td>
+                                <td>
+                                    <button onclick="deleteProduct(${i})" style="color:red; background:none; border:none; cursor:pointer;">🗑️ Remove</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
