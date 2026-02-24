@@ -303,6 +303,7 @@ function setupSidebar() {
             <a href="#" onclick="showPastCustomers(); toggleSidebar();">👥 Past Customers</a>
             <hr style="border:0; border-top:1px solid #444; margin:10px 0;">
             <a href="#" onclick="showAbout(); toggleSidebar();">ℹ️ About Us</a>
+            <a onclick="showSupportPage()">💬 Support Queries</a>
         `;
     } else {
         sidebarContent.innerHTML = `
@@ -311,8 +312,90 @@ function setupSidebar() {
             <a href="#" onclick="showTrackingPage()">📍 Track Orders</a>
             <a href="#" onclick="showGroupHub(); toggleSidebar();">👥 Group Hub (Add Friends)
             <a href="#" onclick="showAbout(); toggleSidebar();">ℹ️ About Us</a>
+            <a onclick="showSupportPage()">💬 Support </a>
+            <a href="#" onclick="showReviewsPage()">⭐ feedback</a>
         `;
     }
+}
+function showSupportPage() {
+    hideAllPages();  
+    document.getElementById('support-page').classList.remove('hidden');
+}
+
+function submitSupport() {
+
+    const subject = document.getElementById("support-subject").value;
+    const message = document.getElementById("support-message").value;
+    const type = document.getElementById("support-type").value;
+
+    if (!subject || !message) {
+        alert("Please fill all fields");
+        return;
+    }
+
+    alert("Your " + type + " has been submitted successfully!");
+
+    document.getElementById("support-subject").value = "";
+    document.getElementById("support-message").value = "";
+}
+function showReviewsPage() {
+    hideAllPages();
+    document.getElementById('reviews-page').classList.remove('hidden');
+
+    const container = document.getElementById('reviews-list');
+
+    if (previousOrders.length === 0) {
+        container.innerHTML = "<p>No completed orders available for rating.</p>";
+        return;
+    }
+
+    container.innerHTML = previousOrders.map((o, index) => `
+        <div class="prod-card">
+            <h3>Order ID: ${o.id}</h3>
+            <p>Total: ₹${o.total}</p>
+
+            <div>
+                ${[1,2,3,4,5].map(star => 
+                    `<span onclick="selectRating(${index}, ${star})" 
+                     id="star-${index}-${star}" 
+                     class="star">☆</span>`
+                ).join('')}
+            </div>
+
+            <textarea id="review-${index}" class="input-field" placeholder="Write feedback..."></textarea>
+            <button class="btn-primary" onclick="submitReview(${index})">
+                Submit Review
+            </button>
+        </div>
+    `).join('');
+}
+function selectRating(orderIndex, rating) {
+    for (let i = 1; i <= 5; i++) {
+        const star = document.getElementById(`star-${orderIndex}-${i}`);
+        star.innerHTML = i <= rating ? "⭐" : "☆";
+    }
+    previousOrders[orderIndex].rating = rating;
+}
+
+function submitReview(orderIndex) {
+    const reviewText = document.getElementById(`review-${orderIndex}`).value;
+
+    if (!previousOrders[orderIndex].rating) {
+        const successBox = document.getElementById("review-success");
+        successBox.innerText = "⚠ Please select rating before submitting.";
+        successBox.classList.remove("hidden");
+        return;
+    }
+
+    previousOrders[orderIndex].review = reviewText;
+
+    const successBox = document.getElementById("review-success");
+    successBox.innerText = "✅ Review submitted successfully!";
+    successBox.classList.remove("hidden");
+
+    setTimeout(() => {
+        successBox.classList.add("hidden");
+    }, 3000);
 }
 
 // ---------------- PRODUCTS & FILTERING ----------------
@@ -372,8 +455,20 @@ function filterCategory(category) {
 }
 
 function filterProducts() {
-    const val = document.getElementById('landing-search').value;
-    renderProducts(val);
+
+    const searchValue = document.getElementById('landing-search').value.toLowerCase();
+    const categoryValue = document.getElementById('category-select').value;
+
+    const grid = document.getElementById('product-list');
+    grid.innerHTML = "";
+
+    PRODUCTS
+        .filter(p => {
+            const matchName = p.name.toLowerCase().includes(searchValue);
+            const matchCategory = categoryValue === "all" || p.category === categoryValue;
+            return matchName && matchCategory;
+        })
+        .forEach(renderProductCard);
 }
 
 function renderProductCard(p) {
@@ -794,7 +889,9 @@ function hideAllPages() {
         'profile-page', 
         'auth-container',
         'about-page',
-        'group-hub-page'
+        'group-hub-page',
+        'support-page',
+        'reviews-page'
     ];
     
     pages.forEach(id => {
