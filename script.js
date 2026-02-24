@@ -14,6 +14,19 @@ let groupOrders = {};
 // NAVIGATION
 function toggleSidebar() { document.getElementById('left-sidebar').classList.toggle('sidebar-hidden'); }
 function toggleCart() { document.getElementById('cart-sidebar').classList.toggle('cart-hidden'); }
+function toggleProfileMenu() {
+    const dropdown = document.getElementById('profile-dropdown');
+    if (dropdown) dropdown.classList.toggle('hidden');
+}
+
+function goHome() {
+    document.getElementById('profile-page').classList.add('hidden');
+    document.getElementById('previous-orders-page').classList.add('hidden');
+    document.getElementById('tracking-page').classList.add('hidden');
+    document.getElementById('auth-container').classList.add('hidden');
+    document.getElementById('seller-dashboard').classList.add('hidden');
+    document.getElementById('landing-page').classList.remove('hidden');
+}
 
 function showLogin() {
     document.getElementById('landing-page').classList.add('hidden');
@@ -110,10 +123,33 @@ function finalizeRegistration() {
 function toggleProfileMenu() {
     document.getElementById('profile-dropdown').classList.toggle('hidden');
 }
+function saveProfileChanges() {
 
+    const newName = document.getElementById("profile-edit-name").value;
+    const newPhone = document.getElementById("profile-edit-phone").value;
+    const newBusiness = document.getElementById("profile-edit-business").value;
+    const newAddress = document.getElementById("profile-edit-address").value;
+
+    // Update appState directly
+    appState.userName = newName;
+    appState.phone = newPhone;
+    appState.business = newBusiness;
+    appState.address = newAddress;
+
+    // Update dropdown display
+    document.getElementById('profile-display-name').innerText = newName;
+    document.getElementById('profile-display-phone').innerText = newPhone;
+
+    const firstLetter = newName.charAt(0).toUpperCase();
+    document.getElementById('profile-icon').innerText = firstLetter;
+    document.getElementById('profile-letter').innerText = firstLetter;
+
+    alert("Profile Updated Successfully!");
+}
 function logout() {
     location.reload();
 }
+
 
 // SIDEBAR CONTENT BASED ON ROLE
 function setupSidebar() {
