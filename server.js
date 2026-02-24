@@ -4,6 +4,7 @@ const mysql = require("mysql2/promise");
 const cors = require("cors");
 const path = require("path");
 const multer = require("multer");
+const axios = require("axios");
 
 const app = express();
 app.use(cors());
@@ -11,14 +12,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname)));
 app.use("/uploads", express.static("uploads"));
+const CHATBOT_BACKEND_URL = process.env.CHATBOT_BACKEND_URL || "http://127.0.0.1:5001/chat";
 
 /* ================= DATABASE ================= */
 
 const db = mysql.createPool({
-    host: "localhost",
-    user: "root",
-    password: "Kousik@SQL1063",
-    database: "ProjectX"
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_DATABASE
 });
 
 /* ================= MULTER CONFIG ================= */
@@ -68,7 +70,7 @@ app.post("/register-send-otp", upload.single("aadhaar"), async (req, res) => {
 
         await db.query(
             `INSERT INTO users 
-            (full_name, business_name, address, phone, role, products, aadhaar_image, otp, otp_expiry, is_verified) 
+            (full_name, business_name, address, phone, role, products_summary, aadhaar_image, otp, otp_expiry, is_verified) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 5 MINUTE), FALSE)`,
             [full_name, business_name, address, phone, role, products || "", imagePath, otp]
         );
@@ -103,9 +105,9 @@ app.post("/register-verify-otp", async (req, res) => {
         }
 
         await db.query(
-            "UPDATE users SET is_verified = TRUE WHERE phone=?",
-            [phone]
-        );
+    "UPDATE users SET is_verified = TRUE, otp=NULL, otp_expiry=NULL WHERE phone=?",
+    [phone]
+);
 
         res.json({ success: true, message: "Registration successful!" });
 
@@ -166,11 +168,548 @@ app.post("/login-verify-otp", async (req, res) => {
             return res.json({ success: false, message: "Invalid OTP" });
         }
 
-        res.json({ success: true, user: rows[0] });
+        await db.query(
+    "UPDATE users SET otp=NULL, otp_expiry=NULL WHERE phone=?",
+    [phone]
+);
+
+res.json({ success: true, user: rows[0] });
 
     } catch (error) {
         console.error(error);
         res.json({ success: false, message: "Server error" });
+    }
+});
+
+/* ================= USER PROFILE & SEARCH ================= */
+
+app.put("/api/users/profile", async (req, res) => {
+    try {
+        const { id, full_name, phone, business_name, address } = req.body;
+        if (!id) return res.status(400).json({ success: false, message: "User ID required" });
+        await db.query(
+            "UPDATE users SET full_name=?, phone=?, business_name=?, address=? WHERE id=?",
+            [full_name, phone, business_name, address, id]
+        );
+        const [rows] = await db.query("SELECT * FROM users WHERE id=?", [id]);
+        res.json({ success: true, user: rows[0] });
+    } catch (error) {
+        console.error("Profile update failed:", error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+app.get("/api/users/search", async (req, res) => {
+    try {
+        const { q } = req.query;
+        if (!q) return res.json({ success: true, data: [] });
+        const like = `%${q}%`;
+        const [rows] = await db.query(
+            "SELECT id, full_name, business_name, role FROM users WHERE role='vendor' AND (full_name LIKE ? OR business_name LIKE ?) LIMIT 10",
+            [like, like]
+        );
+        res.json({ success: true, data: rows });
+    } catch (error) {
+        console.error("User search failed:", error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+/* ================= API to GET PRODUCTS ================= */
+
+app.get("/api/products", async (req, res) => {
+    try {
+        const [products] = await db.query("SELECT * FROM products ORDER BY id");
+        res.json({ success: true, data: products });
+    } catch (error) {
+        console.error("Failed to fetch products:", error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+/* ================= ROLE-SPECIFIC APIS ================= */
+
+// Get all products for a SPECIFIC supplier
+app.get("/api/supplier/products", async (req, res) => {
+    try {
+        const { userId } = req.query;
+        if (!userId) {
+            return res.status(400).json({ success: false, message: "Supplier User ID is required." });
+        }
+        const [products] = await db.query("SELECT * FROM products WHERE supplier_id = ? ORDER BY id", [userId]);
+        res.json({ success: true, data: products });
+    } catch (error) {
+        console.error("Failed to fetch supplier products:", error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+// Get all orders (with items) for a SPECIFIC vendor
+app.get("/api/vendor/orders", async (req, res) => {
+    try {
+        const { userId } = req.query;
+        if (!userId) {
+            return res.status(400).json({ success: false, message: "Vendor User ID is required." });
+        }
+        
+        const query = `
+            SELECT 
+                o.id AS order_id,
+                o.order_date,
+                o.status,
+                o.total_amount,
+                oi.quantity,
+                oi.price_per_unit,
+                p.name AS product_name,
+                p.unit AS product_unit
+            FROM orders o
+            JOIN order_items oi ON o.id = oi.order_id
+            JOIN products p ON oi.product_id = p.id
+            WHERE o.vendor_id = ?
+            ORDER BY o.order_date DESC, o.id DESC;
+        `;
+
+        const [items] = await db.query(query, [userId]);
+        
+        const orders = items.reduce((acc, item) => {
+            if (!acc[item.order_id]) {
+                acc[item.order_id] = {
+                    id: item.order_id,
+                    date: item.order_date,
+                    status: item.status,
+                    total: item.total_amount,
+                    items: []
+                };
+            }
+            acc[item.order_id].items.push({
+                name: item.product_name,
+                unit: item.product_unit,
+                quantity: item.quantity,
+                price: item.price_per_unit
+            });
+            return acc;
+        }, {});
+
+        res.json({ success: true, data: Object.values(orders) });
+    } catch (error) {
+        console.error("Failed to fetch vendor orders:", error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+/* ================= FRIENDS ================= */
+
+app.get("/api/friends", async (req, res) => {
+    try {
+        const { userId } = req.query;
+        if (!userId) return res.status(400).json({ success: false, message: "User ID required" });
+        const [rows] = await db.query(
+            `SELECT u.id, u.full_name, u.business_name
+             FROM friends f
+             JOIN users u ON f.friend_user_id = u.id
+             WHERE f.user_id = ?`,
+            [userId]
+        );
+        res.json({ success: true, data: rows });
+    } catch (error) {
+        console.error("Fetch friends failed:", error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+app.post("/api/friends", async (req, res) => {
+    try {
+        const { userId, friendUserId } = req.body;
+        if (!userId || !friendUserId) {
+            return res.status(400).json({ success: false, message: "User ID and Friend ID required" });
+        }
+        if (Number(userId) === Number(friendUserId)) {
+            return res.status(400).json({ success: false, message: "Cannot add yourself" });
+        }
+        await db.query("INSERT IGNORE INTO friends (user_id, friend_user_id) VALUES (?, ?)", [userId, friendUserId]);
+        res.json({ success: true });
+    } catch (error) {
+        console.error("Add friend failed:", error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+/* ================= GROUP ORDERS ================= */
+
+app.get("/api/group-orders", async (req, res) => {
+    try {
+        const { productId, userId } = req.query;
+        if (!productId) return res.status(400).json({ success: false, message: "Product ID required" });
+        const [orders] = await db.query(
+            "SELECT * FROM group_orders WHERE product_id = ? AND status='Open' ORDER BY id DESC LIMIT 1",
+            [productId]
+        );
+        if (orders.length === 0) return res.json({ success: true, data: null });
+        const [members] = await db.query(
+            "SELECT vendor_id, quantity FROM group_order_members WHERE group_order_id = ?",
+            [orders[0].id]
+        );
+        const totalQty = members.reduce((s, m) => s + m.quantity, 0);
+        let canJoin = false;
+        if (userId) {
+            const creatorId = orders[0].creator_vendor_id;
+            if (Number(userId) === Number(creatorId)) {
+                canJoin = true;
+            } else {
+                const [friendRows] = await db.query(
+                    "SELECT 1 FROM friends WHERE user_id = ? AND friend_user_id = ? LIMIT 1",
+                    [creatorId, userId]
+                );
+                canJoin = friendRows.length > 0;
+            }
+        }
+        res.json({ success: true, data: { ...orders[0], members, totalQty, can_join: canJoin } });
+    } catch (error) {
+        console.error("Fetch group order failed:", error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+app.post("/api/group-orders", async (req, res) => {
+    try {
+        const { productId, vendorId, quantity, targetMoq } = req.body;
+        if (!productId || !vendorId || !quantity || !targetMoq) {
+            return res.status(400).json({ success: false, message: "Missing fields" });
+        }
+        const [vendorRows] = await db.query("SELECT id, role FROM users WHERE id = ?", [vendorId]);
+        if (vendorRows.length === 0 || vendorRows[0].role !== "vendor") {
+            return res.status(403).json({ success: false, message: "Only vendors can join group orders" });
+        }
+        const [existing] = await db.query(
+            "SELECT * FROM group_orders WHERE product_id = ? AND status='Open' ORDER BY id DESC LIMIT 1",
+            [productId]
+        );
+        let groupOrderId;
+        if (existing.length === 0) {
+            const [result] = await db.query(
+                "INSERT INTO group_orders (product_id, creator_vendor_id, target_moq) VALUES (?, ?, ?)",
+                [productId, vendorId, targetMoq]
+            );
+            groupOrderId = result.insertId;
+        } else {
+            groupOrderId = existing[0].id;
+            const creatorId = existing[0].creator_vendor_id;
+            if (Number(vendorId) !== Number(creatorId)) {
+                const [friendRows] = await db.query(
+                    "SELECT 1 FROM friends WHERE user_id = ? AND friend_user_id = ? LIMIT 1",
+                    [creatorId, vendorId]
+                );
+                if (friendRows.length === 0) {
+                    return res.status(403).json({ success: false, message: "Only the creator's friends can join" });
+                }
+            }
+        }
+        await db.query(
+            "INSERT INTO group_order_members (group_order_id, vendor_id, quantity) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)",
+            [groupOrderId, vendorId, quantity]
+        );
+        res.json({ success: true, groupOrderId });
+    } catch (error) {
+        console.error("Create/join group order failed:", error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+/* ================= SUPPLIER ORDERS & CUSTOMERS ================= */
+
+// Get all orders (with items) that include products from a specific supplier
+app.get("/api/supplier/orders", async (req, res) => {
+    try {
+        const { userId } = req.query;
+        if (!userId) {
+            return res.status(400).json({ success: false, message: "Supplier User ID is required." });
+        }
+
+        const query = `
+            SELECT
+                o.id AS order_id,
+                o.order_date,
+                o.status,
+                o.total_amount,
+                u.full_name AS vendor_name,
+                u.business_name AS vendor_business,
+                oi.quantity,
+                oi.price_per_unit,
+                p.name AS product_name,
+                p.unit AS product_unit
+            FROM orders o
+            JOIN users u ON o.vendor_id = u.id
+            JOIN order_items oi ON o.id = oi.order_id
+            JOIN products p ON oi.product_id = p.id
+            WHERE p.supplier_id = ?
+            ORDER BY o.order_date DESC, o.id DESC;
+        `;
+
+        const [items] = await db.query(query, [userId]);
+
+        const orders = items.reduce((acc, item) => {
+            if (!acc[item.order_id]) {
+                acc[item.order_id] = {
+                    id: item.order_id,
+                    date: item.order_date,
+                    status: item.status,
+                    total: item.total_amount,
+                    vendor: {
+                        name: item.vendor_name,
+                        business: item.vendor_business
+                    },
+                    items: []
+                };
+            }
+            acc[item.order_id].items.push({
+                name: item.product_name,
+                unit: item.product_unit,
+                quantity: item.quantity,
+                price: item.price_per_unit
+            });
+            return acc;
+        }, {});
+
+        res.json({ success: true, data: Object.values(orders) });
+    } catch (error) {
+        console.error("Failed to fetch supplier orders:", error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+// Get list of customers for a specific supplier
+app.get("/api/supplier/customers", async (req, res) => {
+    try {
+        const { userId } = req.query;
+        if (!userId) {
+            return res.status(400).json({ success: false, message: "Supplier User ID is required." });
+        }
+
+        const query = `
+            SELECT
+                u.id AS vendor_id,
+                u.full_name AS vendor_name,
+                u.business_name AS vendor_business,
+                COUNT(DISTINCT o.id) AS total_orders
+            FROM orders o
+            JOIN order_items oi ON o.id = oi.order_id
+            JOIN products p ON oi.product_id = p.id
+            JOIN users u ON o.vendor_id = u.id
+            WHERE p.supplier_id = ?
+            GROUP BY u.id, u.full_name, u.business_name
+            ORDER BY total_orders DESC, u.full_name ASC;
+        `;
+
+        const [rows] = await db.query(query, [userId]);
+        res.json({ success: true, data: rows });
+    } catch (error) {
+        console.error("Failed to fetch supplier customers:", error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+/* ================= PRODUCT MANAGEMENT (CRUD) ================= */
+
+app.post("/api/products", async (req, res) => {
+    try {
+        const { supplier_id, name, price, unit, moq, category, image } = req.body;
+        await db.query(
+            "INSERT INTO products (supplier_id, name, price, unit, moq, category, image) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [supplier_id, name, price, unit, moq, category, image]
+        );
+        res.json({ success: true, message: "Product added!" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+app.put("/api/products/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { price, moq } = req.body;
+        await db.query("UPDATE products SET price = ?, moq = ? WHERE id = ?", [price, moq, id]);
+        res.json({ success: true, message: "Product updated!" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+app.delete("/api/products/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        await db.query("DELETE FROM products WHERE id = ?", [id]);
+        res.json({ success: true, message: "Product deleted!" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+/* ================= ORDER MANAGEMENT ================= */
+
+app.post("/api/orders", async (req, res) => {
+    const connection = await db.getConnection();
+    try {
+        await connection.beginTransaction();
+        const { vendor_id, total_amount, items } = req.body;
+
+        const [orderResult] = await connection.query(
+            "INSERT INTO orders (vendor_id, total_amount, status) VALUES (?, ?, 'Processing')",
+            [vendor_id, total_amount]
+        );
+        const orderId = orderResult.insertId;
+
+        for (const item of items) {
+            await connection.query(
+                "INSERT INTO order_items (order_id, product_id, quantity, price_per_unit) VALUES (?, ?, ?, ?)",
+                [orderId, item.id, item.qty, item.price]
+            );
+        }
+
+        await connection.commit();
+        res.json({ success: true, orderId });
+    } catch (error) {
+        await connection.rollback();
+        console.error(error);
+        res.status(500).json({ success: false, message: "Server error" });
+    } finally {
+        connection.release();
+    }
+});
+
+app.get("/api/product-trends", async (req, res) => {
+    try {
+        const [rows] = await db.query(`
+            SELECT
+                p.id,
+                p.name,
+                p.price AS current_price,
+                COALESCE(ROUND(AVG(oi.price_per_unit), 2), p.price) AS baseline_price
+            FROM products p
+            LEFT JOIN order_items oi ON oi.product_id = p.id
+            GROUP BY p.id, p.name, p.price
+            ORDER BY p.id
+        `);
+        res.json({ success: true, data: rows });
+    } catch (error) {
+        console.error("Failed to fetch product trends:", error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+/* ================= BARGAINS ================= */
+
+app.post("/api/bargains", async (req, res) => {
+    try {
+        const { product_id, vendor_id, offer_price, quantity } = req.body;
+        if (!product_id || !vendor_id || !offer_price || !quantity) {
+            return res.status(400).json({ success: false, message: "Missing fields" });
+        }
+        await db.query(
+            "INSERT INTO bargains (product_id, vendor_id, offer_price, quantity) VALUES (?, ?, ?, ?)",
+            [product_id, vendor_id, offer_price, quantity]
+        );
+        res.json({ success: true });
+    } catch (error) {
+        console.error("Create bargain failed:", error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+app.get("/api/bargains", async (req, res) => {
+    try {
+        const { supplierId } = req.query;
+        if (!supplierId) return res.status(400).json({ success: false, message: "Supplier ID required" });
+        const [rows] = await db.query(
+            `SELECT b.id, b.offer_price, b.quantity, b.status, b.created_at,
+                    p.name AS product_name, u.full_name AS vendor_name
+             FROM bargains b
+             JOIN products p ON b.product_id = p.id
+             JOIN users u ON b.vendor_id = u.id
+             WHERE p.supplier_id = ?
+             ORDER BY b.created_at DESC`,
+            [supplierId]
+        );
+        res.json({ success: true, data: rows });
+    } catch (error) {
+        console.error("Fetch bargains failed:", error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+app.put("/api/bargains/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+        if (!status) return res.status(400).json({ success: false, message: "Status required" });
+        await db.query("UPDATE bargains SET status=? WHERE id=?", [status, id]);
+        res.json({ success: true });
+    } catch (error) {
+        console.error("Update bargain failed:", error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+/* ================= REVIEWS ================= */
+
+app.post("/api/reviews", async (req, res) => {
+    try {
+        const { order_id, vendor_id, rating, review_text } = req.body;
+        if (!order_id || !vendor_id || !rating) {
+            return res.status(400).json({ success: false, message: "Missing fields" });
+        }
+        await db.query(
+            "INSERT INTO reviews (order_id, vendor_id, rating, review_text) VALUES (?, ?, ?, ?)",
+            [order_id, vendor_id, rating, review_text || ""]
+        );
+        res.json({ success: true });
+    } catch (error) {
+        console.error("Create review failed:", error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+/* ================= SUPPORT ================= */
+
+app.post("/api/support", async (req, res) => {
+    try {
+        const { user_id, subject, message, type } = req.body;
+        if (!user_id || !subject || !message) {
+            return res.status(400).json({ success: false, message: "Missing fields" });
+        }
+        await db.query(
+            "INSERT INTO support_tickets (user_id, subject, message, type) VALUES (?, ?, ?, ?)",
+            [user_id, subject, message, type || "query"]
+        );
+        res.json({ success: true });
+    } catch (error) {
+        console.error("Create support ticket failed:", error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+/* ================= AI CHAT PROXY ================= */
+
+app.post("/api/chat", async (req, res) => {
+    try {
+        const { message } = req.body;
+        if (!message || !String(message).trim()) {
+            return res.status(400).json({ success: false, message: "Message is required" });
+        }
+
+        const response = await axios.post(CHATBOT_BACKEND_URL, { message: String(message).trim() }, { timeout: 20000 });
+        return res.json({
+            success: true,
+            reply: response.data?.reply || "No reply returned by chatbot service."
+        });
+    } catch (error) {
+        console.error("Chat proxy error:", error.message);
+        return res.status(502).json({
+            success: false,
+            reply: "AI assistant is temporarily unavailable."
+        });
     }
 });
 
