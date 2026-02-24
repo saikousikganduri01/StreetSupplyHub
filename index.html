@@ -80,5 +80,42 @@ function googleTranslateElementInit() {
             <button class="btn-primary" onclick="placeOrder()">Checkout Now</button>
         </div>
     </div>
+    <div id="auth-container" class="hidden">
+        <div id="login-page" class="auth-card hidden">
+            <h2>Welcome Back</h2>
+            <input type="text" id="login-name" class="input-field" placeholder="Full Name">
+            <input type="tel" id="login-phone" class="input-field" placeholder="Phone Number">
+            <div id="login-initial-action">
+                <button class="btn-primary" onclick="sendOTP()">Send OTP</button>
+            </div>
+            <div id="otp-section" class="hidden" style="margin-top: 15px;">
+                <p style="font-size: 0.8rem; color: #666; margin-bottom: 5px;">Enter 1234 to verify</p>
+                <input type="text" id="otp-input" class="input-field otp-box" placeholder="0000" maxlength="4">
+                <button class="btn-primary" onclick="verifyOTP()" style="margin-top:10px;">Verify & Enter Marketplace</button>
+            </div>
+            <p class="auth-footer">New here? <a href="#" onclick="showRegister()">Register Business</a></p>
+        </div>
+        <div id="register-page" class="auth-card hidden">
+            <h2>Join The Hub</h2>
+            <div class="role-selection">
+                <div class="role-block" id="block-vendor" onclick="selectRole('vendor')"><h3>Vendor</h3></div>
+                <div class="role-block" id="block-supplier" onclick="selectRole('supplier')"><h3>Supplier</h3></div>
+            </div>
+            <div id="registration-form" class="hidden">
+                <input type="text" id="reg-name" class="input-field" placeholder="Full Name">
+                <input type="text" id="reg-biz" class="input-field" placeholder="Business Name">
+                <textarea id="reg-addr" class="input-field" placeholder="Full Business Address"></textarea>
+                <div class="file-input-group">
+                    <label>Masked Aadhaar (Required for Verification)</label>
+                    <input type="file" id="reg-aadhaar">
+                </div>
+                <div id="supplier-product-section" class="hidden">
+                    <input type="text" id="reg-products" class="input-field" placeholder="Products you will sell (e.g. Rice, Oil)">
+                </div>
+                <button class="btn-primary" onclick="finalizeRegistration()">Create Account</button>
+                <p style="text-align:center; margin-top:10px;"><a href="#" onclick="showLogin()">Back to Login</a></p>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
