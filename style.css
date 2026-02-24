@@ -168,6 +168,23 @@ textarea.input-field {
     align-items: center;
     font-weight: bold;
 }
+.profile-btn {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    background: white;
+    cursor: pointer;
+    text-align: left;
+    font-size: 14px;
+}
+
+.profile-btn:hover {
+    background: #f3f3f3;
+}
+
+.logout-btn {
+    color: red;
+}
 /* Scrollbar styling for the form */
 #registration-form::-webkit-scrollbar { width: 5px; }
 #registration-form::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
