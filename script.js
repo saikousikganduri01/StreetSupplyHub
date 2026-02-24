@@ -354,10 +354,9 @@ function renderProductCard(p) {
                 </div>
                 <button class="group-btn" style="background:#444;" onclick="openBargain(${p.id})">🤝 Bargain Price</button>
                 <button class="group-btn" onclick="createGroupOrder(${p.id})">Create Group Order</button>
+                <button class="group-btn join-btn hidden" id="join-btn-${p.id}" onclick="joinGroupOrder(${p.id})">Join Group Order</button>
+                <p id="group-status-${p.id}" class="group-status hidden">Current Group: 0 ${p.unit}</p>
             `}
-
-            <button class="group-btn join-btn hidden" id="join-btn-${p.id}" onclick="joinGroupOrder(${p.id})">Join Group Order</button>
-            <p id="group-status-${p.id}" class="group-status hidden">Current Group: 0 ${p.unit}</p>
         </div>
     `;
 }
@@ -569,24 +568,62 @@ function showLoanOptions() {
     `;
 }
 
-function payFull(total) { alert("Payment Successful! ₹" + total + " Paid."); finalizeOrder("Paid"); }
-function payLater(total) { alert("Microloan Approved! ₹" + total + " Due in 7 Days."); finalizeOrder("Credit"); }
+function payFull(total) { 
+    showSuccessPopup("Payment Successful!", `₹${total.toFixed(2)} has been paid successfully. Your order is now being processed.`);
+    finalizeOrder("Paid");
+}
+function payLater(total) { 
+    showSuccessPopup("Microloan Approved!", `₹${total.toFixed(2)} has been credited to your account. Your payment is due in 7 days.`);
+    finalizeOrder("Credit");
+}
+function showSuccessPopup(title, message) {
+    // Create the overlay background
+    const overlay = document.createElement("div");
+    overlay.className = "custom-popup-overlay";
+    
+    // Create the message box
+    overlay.innerHTML = `
+        <div class="custom-popup-box">
+            <div class="success-icon">✅</div>
+            <h2>${title}</h2>
+            <p>${message}</p>
+            <button class="btn-primary" onclick="this.parentElement.parentElement.remove()">Great!</button>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
 
+    // Automatically remove after 4 seconds if they don't click the button
+    setTimeout(() => {
+        if (overlay.parentNode) overlay.remove();
+    }, 4000);
+}
 function finalizeOrder(paymentStatus) {
+    // Re-calculate the actual total including the group discount
+    let total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    const memberCount = (myFriends ? myFriends.length : 0) + 1; 
+    
+    // Apply 10% discount if 5+ members
+    const finalTotal = memberCount >= 5 ? (total * 0.9) : total;
+
     const order = {
         id: "ORD" + Math.floor(Math.random() * 100000),
-        customerName: appState.userName, // Added this line
+        customerName: appState.userName,
         items: [...cart],
-        total: cart.reduce((sum, item) => sum + (item.price * item.qty), 0),
+        total: finalTotal.toFixed(2), // Save the discounted amount
         status: "Processing",
-        payment: paymentStatus
+        payment: paymentStatus,
+        date: new Date().toLocaleDateString()
     };
+
     previousOrders.push(order);
     cart = [];
     updateCartUI();
     closeLoanPopup();
+
     if(document.getElementById('cart-sidebar').classList.contains('cart-hidden') === false) toggleCart(); 
-    alert("✅ Order Placed Successfully!");
+    
+    // Custom Pop-up is already triggered by payFull/payLater, so we just switch pages
     showPreviousOrders();
 }
 
