@@ -7,31 +7,36 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 </head>
-<div id="google_translate_element"></div>
-<script type="text/javascript">
-function googleTranslateElementInit() {
-  new google.translate.TranslateElement(
-    {pageLanguage: 'en', includedLanguages: 'en,hi,te'},
-    'google_translate_element'
-  );
-}
-</script>
-<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 <body>
+    <div id="google_translate_element"></div>
+
+    <script type="text/javascript">
+    function googleTranslateElementInit() {
+      new google.translate.TranslateElement(
+        {pageLanguage: 'en', includedLanguages: 'en,hi,te'},
+        'google_translate_element'
+      );
+    }
+    </script>
+    <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
     <header class="landing-nav">
         <div class="nav-left-group">
             <button id="menu-btn" class="hidden" onclick="toggleSidebar()">☰</button>
             <h2 class="logo" onclick="location.reload()" style="cursor:pointer">StreetSupply<span>Hub</span></h2>
         </div>
-        <div class="search-wrapper">
+
+        <div id="search-container" class="search-wrapper">
             <select id="category-select" onchange="filterProducts()" class="category-select">
                 <option value="all">🛒 All</option>
                 <option value="vegetable">🥦 Vegetables</option>
                 <option value="flour">🌾 Flour</option>
                 <option value="oil">🛢 Oils</option>
+                <option value="grains">🌾 Grains</option>
             </select>
             <input type="text" id="landing-search" placeholder="Search products..." onkeyup="filterProducts()">
         </div>
+
         <div class="nav-right-group">
             <div class="cart-icon-wrapper" onclick="toggleCart()">
                 <span>🛒</span>
@@ -47,72 +52,66 @@ function googleTranslateElementInit() {
                             <small id="profile-display-phone"></small>
                         </div>
                     </div>
-            <hr>
-
-<button onclick="openProfilePage()" class="profile-btn">
-    👤 Profile Settings
-</button>
-<button onclick="logout()" class="profile-btn logout-btn">
-    🚪 Logout
-</button>
+                    <hr>
+                    <button onclick="openProfilePage()" class="profile-btn">👤 Profile Settings</button>
+                    <button onclick="logout()" class="profile-btn logout-btn">🚪 Logout</button>
                 </div>
             </div>
-
             <button id="auth-nav-btn" class="btn-login-nav" onclick="showLogin()">Login</button>
         </div>
     </header>
+
     <!-- PROFILE SETTINGS PAGE -->
-<div id="profile-page" class="hidden container">
-    <h2>👤 Profile Settings</h2>
+    <div id="profile-page" class="hidden container">
+        <h2>👤 Profile Settings</h2>
+        <div class="profile-box">
+            <label>Name</label>
+            <input type="text" id="profile-edit-name" class="input-field">
 
-    <div class="profile-box">
-        <label>Name</label>
-        <input type="text" id="profile-edit-name" class="input-field">
+            <label>Phone</label>
+            <input type="text" id="profile-edit-phone" class="input-field">
 
-        <label>Phone</label>
-        <input type="text" id="profile-edit-phone" class="input-field">
+            <label>Business</label>
+            <input type="text" id="profile-edit-business" class="input-field">
 
-        <label>Business</label>
-        <input type="text" id="profile-edit-business" class="input-field">
+            <label>Address</label>
+            <textarea id="profile-edit-address" class="input-field"></textarea>
 
-        <label>Address</label>
-        <textarea id="profile-edit-address" class="input-field"></textarea>
-
-        <button class="btn-primary" onclick="saveProfileChanges()">Save Changes</button>
-    </div>
-</div>
-<div id="group-hub-page" class="hidden">
-    <div class="container">
-        <h2>👥 Group Hub</h2>
-        <div class="trend-section" style="padding:20px; margin-bottom:20px;">
-            <h3>🔍 Add a Friend</h3>
-            <div style="display:flex; gap:10px;">
-                <input type="text" id="friend-search-input" class="input-field" placeholder="Search username (e.g., Rahul123)">
-                <button class="btn-primary" style="width:auto;" onclick="searchFriend()">Search</button>
-            </div>
-            <div id="search-result" style="margin-top:15px;"></div>
-        </div>
-
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
-            <div class="trend-section" style="padding:20px;">
-                <h3>🤝 My Friends</h3>
-                <ul id="friend-list" style="list-style:none; padding:0;">
-                    <li style="color:#888;">No friends added yet.</li>
-                </ul>
-            </div>
-            <div class="trend-section" style="padding:20px;">
-                <h3>📦 Active Group (Min 5)</h3>
-                <p id="group-count">Members: 1/5</p>
-                <progress id="group-progress" value="1" max="5" style="width:100%;"></progress>
-                <p id="group-benefit" style="color:#27ae60; font-weight:bold; margin-top:10px; display:none;">
-                    ✅ 10% Group Discount Unlocked!
-                </p>
-            </div>
+            <button class="btn-primary" onclick="saveProfileChanges()">Save Changes</button>
         </div>
     </div>
-</div>
 
-<!-- MY ORDERS PAGE -->
+    <!-- GROUP HUB PAGE -->
+    <div id="group-hub-page" class="hidden">
+        <div class="container">
+            <h2>👥 Group Hub</h2>
+            <div class="trend-section" style="padding:20px; margin-bottom:20px;">
+                <h3>🔍 Add a Friend</h3>
+                <div style="display:flex; gap:10px;">
+                    <input type="text" id="friend-search-input" class="input-field" placeholder="Search username (e.g., Rahul123)">
+                    <button class="btn-primary" style="width:auto;" onclick="searchFriend()">Search</button>
+                </div>
+                <div id="search-result" style="margin-top:15px;"></div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                <div class="trend-section" style="padding:20px;">
+                    <h3>🤝 My Friends</h3>
+                    <ul id="friend-list" style="list-style:none; padding:0;">
+                        <li style="color:#888;">No friends added yet.</li>
+                    </ul>
+                </div>
+                <div class="trend-section" style="padding:20px;">
+                    <h3>📦 Active Group (Min 5)</h3>
+                    <p id="group-count">Members: 1/5</p>
+                    <progress id="group-progress" value="1" max="5" style="width:100%;"></progress>
+                    <p id="group-benefit" style="color:#27ae60; font-weight:bold; margin-top:10px; display:none;">
+                        ✅ 10% Group Discount Unlocked!
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div id="left-sidebar" class="sidebar-hidden">
         <div class="sidebar-header">
@@ -135,7 +134,13 @@ function googleTranslateElementInit() {
             </section>
         </div>
 
-        
+        <div class="category-bar">
+            <button onclick="filterCategory('all')">All</button>
+            <button onclick="filterCategory('vegetable')">Vegetables</button>
+            <button onclick="filterCategory('oil')">Oils</button>
+            <button onclick="filterCategory('grains')">Grains</button>
+            <button onclick="filterCategory('flour')">Flour</button>
+        </div>
 
         <section class="products-grid" id="product-list"></section>
     </div>
@@ -165,9 +170,10 @@ function googleTranslateElementInit() {
             </div>
 
             <div id="otp-section" class="hidden" style="margin-top: 15px;">
-                <p style="font-size: 0.8rem; color: #666; margin-bottom: 5px;">Enter 1234 to verify</p>
-                <input type="text" id="otp-input" class="input-field otp-box" placeholder="0000" maxlength="4">
+                <p style="font-size: 0.8rem; color: #666; margin-bottom: 5px;">Enter OTP sent to your phone</p>
+                <input type="text" id="otp-input" class="input-field otp-box" maxlength="4">
                 <button class="btn-primary" onclick="verifyOTP()" style="margin-top:10px;">Verify & Enter Marketplace</button>
+                <p id="login-otp-message" class="otp-message"></p>
             </div>
 
             <p class="auth-footer">New here? <a href="#" onclick="showRegister()">Register Business</a></p>
@@ -181,6 +187,7 @@ function googleTranslateElementInit() {
             </div>
             <div id="registration-form" class="hidden">
                 <input type="text" id="reg-name" class="input-field" placeholder="Full Name">
+                <input type="tel" id="reg-phone" class="input-field" placeholder="Phone Number">
                 <input type="text" id="reg-biz" class="input-field" placeholder="Business Name">
                 <textarea id="reg-addr" class="input-field" placeholder="Full Business Address"></textarea>
                 
@@ -193,7 +200,16 @@ function googleTranslateElementInit() {
                     <input type="text" id="reg-products" class="input-field" placeholder="Products you will sell (e.g. Rice, Oil)">
                 </div>
 
-                <button class="btn-primary" onclick="finalizeRegistration()">Create Account</button>
+                <p id="register-main-message" class="otp-message"></p>
+
+                <button class="btn-primary" onclick="finalizeRegistration()">Send OTP</button>
+
+                <div id="register-otp-section" class="hidden" style="margin-top:15px;">
+                    <input type="text" id="register-otp-input" class="input-field otp-box" maxlength="4" placeholder="Enter OTP">
+                    <button class="btn-primary" onclick="verifyRegisterOTP()" style="margin-top:10px;">
+                        Verify & Complete Registration
+                    </button>
+                </div>
                 <p style="text-align:center; margin-top:10px;"><a href="#" onclick="showLogin()">Back to Login</a></p>
             </div>
         </div>
@@ -221,10 +237,10 @@ function googleTranslateElementInit() {
     <div id="previous-orders-page" class="hidden container" style="margin-top:40px;">
         <h2>📦 Previous Orders</h2>
         <div id="previous-orders-list"></div>
-                <button class="btn-primary" onclick="goHome()" style="width:auto; padding: 10px 30px;">⬅ Back to Home</button>
-
+        <button class="btn-primary" onclick="goHome()" style="width:auto; padding: 10px 30px;">⬅ Back to Home</button>
         <br>
     </div>
+
     <div id="about-page" class="hidden">
         <div class="container" style="max-width: 800px; margin: 40px auto; line-height: 1.6;">
             <h2 style="color: #2c3e50; border-bottom: 2px solid #e67e22; padding-bottom: 10px;">About Our Marketplace</h2>
@@ -257,11 +273,10 @@ function googleTranslateElementInit() {
         <br>
         <button class="btn-primary" onclick="goHome()" style="width:auto; padding: 10px 30px;">⬅ Back to Home</button>
     </div>
+
     <div id="support-page" class="hidden container" style="margin-top:40px;">
-    <h2>💬 Support </h2>
-
-    <div class="profile-box">
-
+        <h2>💬 Support</h2>
+        <div class="profile-box">
             <label>Subject</label>
             <input type="text" id="support-subject" class="input-field" placeholder="Enter subject">
 
@@ -276,23 +291,37 @@ function googleTranslateElementInit() {
             <button class="btn-primary" onclick="submitSupport()">Submit</button>
         </div>
 
-        <button class="btn-primary" onclick="goHome()" style="width:auto; padding:10px 30px;">
-            ⬅ Back to Home
-        </button>
+        <button class="btn-primary" onclick="goHome()" style="width:auto; padding:10px 30px;">⬅ Back to Home</button>
     </div>
+
     <div id="reviews-page" class="hidden container" style="margin-top:40px;">
         <h2>⭐ Rate Suppliers</h2>
-
-        <!-- ✅ Success Message Box -->
         <div id="review-success" class="hidden success-message"></div>
-
         <div id="reviews-list"></div>
-
         <br>
-        <button class="btn-primary" onclick="goHome()" style="width:auto; padding:10px 30px;">
-            ⬅ Back to Home
-        </button>
+        <button class="btn-primary" onclick="goHome()" style="width:auto; padding:10px 30px;">⬅ Back to Home</button>
     </div>
+
+    <div id="chatbot-container">
+        <div id="chat-circle" class="chat-button" onclick="toggleChatWindow()">
+            <span id="chat-icon">💬</span>
+        </div>
+
+        <div id="chat-window" class="chat-window hidden">
+            <div class="chat-header">
+                <span>Market Assistant</span>
+                <button onclick="toggleChatWindow()" class="close-chat">×</button>
+            </div>
+            <div id="chat-body" class="chat-body">
+                <div class="bot-msg">Hello! Ask me about products, prices, or market trends.</div>
+            </div>
+            <div class="chat-footer">
+                <input type="text" id="chat-input" placeholder="Ask about prices..." onkeypress="handleChatKey(event)">
+                <button onclick="sendChatMessage()">➤</button>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
