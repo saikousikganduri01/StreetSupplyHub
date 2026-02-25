@@ -23,6 +23,80 @@ let lastUserSearch = [];
 const API_BASE = "http://localhost:5000";
 let selectedCategory = "all";
 
+// ---------------- PRODUCT IMAGES ----------------
+
+const pictureFiles = [
+    "Bajra Flour.jpg",
+    "Besan Flour.jpg",
+    "Chana Dal.jpg",
+    "Cold-Pressed Mustard Oil.jpg",
+    "Farm-Fresh Potatoes.webp",
+    "Fresh Tomatoes.jpg",
+    "Green Chillies.jpg",
+    "Groundnut Oil.jpg",
+    "Kashmiri Apples.jpg",
+    "MP Sharbati Wheat.jpg",
+    "Moong Dal.jpg",
+    "Organic Basmati Rice.jpg",
+    "Organic Turmeric Powder.jpg",
+    "Palmolein Oil.jpg",
+    "Premium Maida (Flour).jpg",
+    "Premium Onions.jpg",
+    "Red Onions.jpg",
+    "Refined Wheat Flour.jpg",
+    "Rice Bran Oil.jpg",
+    "Semolina (Sooji).jpg",
+    "Sona Masoori Rice.jpg",
+    "Soybean Oil (Bulk).jpg",
+    "Sunflower Oil Tin.jpg",
+    "Toor Dal.jpg"
+];
+
+const normalizeName = (value) =>
+    String(value || "")
+        .toLowerCase()
+        .replace(/\.[^.]+$/, "")
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim();
+
+const pictureMap = new Map(pictureFiles.map((file) => [normalizeName(file), file]));
+
+function findPicture(productName) {
+    const key = normalizeName(productName);
+    if (!key) return null;
+    if (pictureMap.has(key)) return pictureMap.get(key);
+    const keyTokens = new Set(key.split(" "));
+    let best = { score: 0, file: null };
+    for (const [fileKey, fileName] of pictureMap.entries()) {
+        if (fileKey.includes(key) || key.includes(fileKey)) return fileName;
+        const fileTokens = new Set(fileKey.split(" "));
+        let overlap = 0;
+        keyTokens.forEach(t => { if (fileTokens.has(t)) overlap += 1; });
+        const score = overlap / Math.max(1, Math.max(keyTokens.size, fileTokens.size));
+        if (score > best.score) best = { score, file: fileName };
+    }
+    return best.score >= 0.5 ? best.file : null;
+}
+
+function getProductImage(product) {
+    if (product.image) return product.image;
+    const matched = findPicture(product.name);
+    if (matched) return `pictures/${encodeURIComponent(matched)}`;
+    const category = (product.category || "").toLowerCase();
+    const name = (product.name || "Product").replace(/[^a-z0-9 ]/gi, "").trim() || "Product";
+    const label = encodeURIComponent(name.slice(0, 14));
+    if (category === "vegetable") {
+        return `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 220'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23e7f7ec'/><stop offset='1' stop-color='%23b8e6c8'/></linearGradient></defs><rect width='360' height='220' rx='18' fill='url(%23g)'/><circle cx='110' cy='110' r='54' fill='%2388cfa1'/><circle cx='190' cy='120' r='46' fill='%236ab384'/><circle cx='245' cy='95' r='34' fill='%234f9b6f'/><text x='24' y='198' font-family='Sora, Arial' font-size='18' fill='%2332593f'>${label}</text></svg>`;
+    }
+    if (category === "oil") {
+        return `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 220'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23fff3d4'/><stop offset='1' stop-color='%23ffd08a'/></linearGradient></defs><rect width='360' height='220' rx='18' fill='url(%23g)'/><rect x='90' y='40' width='60' height='120' rx='16' fill='%23f4b942'/><rect x='170' y='60' width='80' height='100' rx='18' fill='%23e39b2e'/><text x='24' y='198' font-family='Sora, Arial' font-size='18' fill='%236a4a12'>${label}</text></svg>`;
+    }
+    if (category === "grains" || category === "flour") {
+        return `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 220'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23fff5e1'/><stop offset='1' stop-color='%23f3d5a4'/></linearGradient></defs><rect width='360' height='220' rx='18' fill='url(%23g)'/><path d='M90 150 C110 90, 150 90, 170 150' fill='%23e2b97e'/><path d='M170 150 C190 90, 230 90, 250 150' fill='%23d6a86e'/><text x='24' y='198' font-family='Sora, Arial' font-size='18' fill='%236a4a12'>${label}</text></svg>`;
+    }
+    return `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 220'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23edf3ff'/><stop offset='1' stop-color='%23c9d9ff'/></linearGradient></defs><rect width='360' height='220' rx='18' fill='url(%23g)'/><rect x='86' y='60' width='190' height='90' rx='20' fill='%2384a2e6'/><text x='24' y='198' font-family='Sora, Arial' font-size='18' fill='%2332487a'>${label}</text></svg>`;
+}
+
 // ---------------- API & DATA FETCHING ----------------
 
 async function fetchAllProducts() {
@@ -134,6 +208,50 @@ function showLogin() {
 function showRegister() {
     document.getElementById('login-page').classList.add('hidden');
     document.getElementById('register-page').classList.remove('hidden');
+}
+
+function handleLoginKey(event) {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    const otpVisible = !document.getElementById('otp-section')?.classList.contains('hidden');
+    if (otpVisible) verifyOTP();
+    else sendOTP();
+}
+
+function findVisibleContainer(selectors) {
+    for (const selector of selectors) {
+        const el = document.querySelector(selector);
+        if (el && !el.classList.contains('hidden')) return el;
+    }
+    return null;
+}
+
+function handleGlobalEnter(event) {
+    if (event.key !== "Enter") return;
+    if (event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) return;
+
+    const target = event.target;
+    if (target && target.tagName === "TEXTAREA") return;
+    if (target && target.closest('.prod-card, .products-grid, .recommend-card')) return;
+    if (target && target.id === "chat-input") return;
+
+    const container = findVisibleContainer([
+        '#login-page',
+        '#register-page',
+        '#profile-page',
+        '#group-hub-page',
+        '#support-page',
+        '#reviews-page',
+        '#cart-sidebar:not(.cart-hidden)',
+        '#bargain-modal:not(.hidden)'
+    ]);
+    if (!container) return;
+
+    const primaryBtn = container.querySelector('button.btn-primary:not(.hidden)');
+    if (primaryBtn) {
+        event.preventDefault();
+        primaryBtn.click();
+    }
 }
 
 async function finalizeRegistration() {
@@ -276,15 +394,13 @@ function openProfilePage() {
 }
 
 function saveProfileChanges() {
-    const newName = document.getElementById("profile-edit-name").value.trim();
-    const newPhone = document.getElementById("profile-edit-phone").value.trim();
     const newBusiness = document.getElementById("profile-edit-business").value.trim();
     const newAddress = document.getElementById("profile-edit-address").value.trim();
 
     updateProfileOnServer({
         id: appState.id,
-        full_name: newName || appState.userName,
-        phone: newPhone || appState.phone,
+        full_name: appState.userName,
+        phone: appState.phone,
         business_name: newBusiness || appState.business,
         address: newAddress || appState.address
     });
@@ -451,65 +567,6 @@ function renderProducts(filter = "") {
 
     const isSupplier = (appState.role === 'supplier');
     const isGuest = !appState.isLoggedIn;
-    const pictureFiles = [
-        "Bajra Flour.jpg",
-        "Besan Flour.jpg",
-        "Chana Dal.jpg",
-        "Cold-Pressed Mustard Oil.jpg",
-        "Farm-Fresh Potatoes.webp",
-        "Fresh Tomatoes.jpg",
-        "Green Chillies.jpg",
-        "Groundnut Oil.jpg",
-        "Kashmiri Apples.jpg",
-        "MP Sharbati Wheat.jpg",
-        "Moong Dal.jpg",
-        "Organic Basmati Rice.jpg",
-        "Organic Turmeric Powder.jpg",
-        "Palmolein Oil.jpg",
-        "Premium Maida (Flour).jpg",
-        "Premium Onions.jpg",
-        "Red Onions.jpg",
-        "Refined Wheat Flour.jpg",
-        "Rice Bran Oil.jpg",
-        "Semolina (Sooji).jpg",
-        "Sona Masoori Rice.jpg",
-        "Soybean Oil (Bulk).jpg",
-        "Sunflower Oil Tin.jpg",
-        "Toor Dal.jpg"
-    ];
-    const normalizeName = (value) =>
-        String(value || "")
-            .toLowerCase()
-            .replace(/\.[^.]+$/, "")
-            .replace(/[^a-z0-9]+/g, " ")
-            .trim();
-    const pictureMap = new Map(pictureFiles.map((file) => [normalizeName(file), file]));
-    const findPicture = (productName) => {
-        const key = normalizeName(productName);
-        if (pictureMap.has(key)) return pictureMap.get(key);
-        for (const [fileKey, fileName] of pictureMap.entries()) {
-            if (fileKey.includes(key) || key.includes(fileKey)) return fileName;
-        }
-        return null;
-    };
-    const getProductImage = (p) => {
-        if (p.image) return p.image;
-        const matched = findPicture(p.name);
-        if (matched) return `pictures/${encodeURIComponent(matched)}`;
-        const category = (p.category || "").toLowerCase();
-        const name = (p.name || "Product").replace(/[^a-z0-9 ]/gi, "").trim() || "Product";
-        const label = encodeURIComponent(name.slice(0, 14));
-        if (category === "vegetable") {
-            return `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 220'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23e7f7ec'/><stop offset='1' stop-color='%23b8e6c8'/></linearGradient></defs><rect width='360' height='220' rx='18' fill='url(%23g)'/><circle cx='110' cy='110' r='54' fill='%2388cfa1'/><circle cx='190' cy='120' r='46' fill='%236ab384'/><circle cx='245' cy='95' r='34' fill='%234f9b6f'/><text x='24' y='198' font-family='Sora, Arial' font-size='18' fill='%2332593f'>${label}</text></svg>`;
-        }
-        if (category === "oil") {
-            return `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 220'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23fff3d4'/><stop offset='1' stop-color='%23ffd08a'/></linearGradient></defs><rect width='360' height='220' rx='18' fill='url(%23g)'/><rect x='90' y='40' width='60' height='120' rx='16' fill='%23f4b942'/><rect x='170' y='60' width='80' height='100' rx='18' fill='%23e39b2e'/><text x='24' y='198' font-family='Sora, Arial' font-size='18' fill='%236a4a12'>${label}</text></svg>`;
-        }
-        if (category === "grains" || category === "flour") {
-            return `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 220'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23fff5e1'/><stop offset='1' stop-color='%23f3d5a4'/></linearGradient></defs><rect width='360' height='220' rx='18' fill='url(%23g)'/><path d='M90 150 C110 90, 150 90, 170 150' fill='%23e2b97e'/><path d='M170 150 C190 90, 230 90, 250 150' fill='%23d6a86e'/><text x='24' y='198' font-family='Sora, Arial' font-size='18' fill='%236a4a12'>${label}</text></svg>`;
-        }
-        return `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 220'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23edf3ff'/><stop offset='1' stop-color='%23c9d9ff'/></linearGradient></defs><rect width='360' height='220' rx='18' fill='url(%23g)'/><rect x='86' y='60' width='190' height='90' rx='20' fill='%2384a2e6'/><text x='24' y='198' font-family='Sora, Arial' font-size='18' fill='%2332487a'>${label}</text></svg>`;
-    };
 
     allProducts
         .filter(p => p.name.toLowerCase().includes(filter.toLowerCase()))
@@ -752,8 +809,10 @@ function renderRecommendationSection() {
         const reasonMeta = p.recCount > 0
             ? `Ordered ${p.recCount} time${p.recCount > 1 ? "s" : ""} • ${p.recQty} ${p.unit}`
             : `Category: ${p.category || "General"}`;
+        const productImage = getProductImage(p);
         return `
             <article class="recommend-card">
+                <img class="recommend-img" src="${productImage}" alt="${p.name}">
                 <div class="recommend-badge">${p.recReason}</div>
                 <h4>${p.name}</h4>
                 <div class="recommend-meta">by ${supplierName}</div>
@@ -1557,4 +1616,5 @@ window.onload = () => {
     }
     updateChatAccess();
     updateAuthUI();
+    document.addEventListener("keydown", handleGlobalEnter);
 };
