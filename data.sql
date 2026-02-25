@@ -56,6 +56,7 @@ CREATE TABLE `products` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `supplier_id` INT NOT NULL,
     `name` VARCHAR(100) NOT NULL,
+    `supplier_display_name` VARCHAR(255),
     `price` DECIMAL(10, 2) NOT NULL,
     `unit` VARCHAR(20) NOT NULL,
     `moq` INT NOT NULL COMMENT 'Minimum Order Quantity',
@@ -201,22 +202,33 @@ INSERT INTO `users` (`id`, `full_name`, `business_name`, `address`, `phone`, `ro
 (9, 'Farah Khan', 'Spice Bazaar', '55 Old Market, Jaipur, Rajasthan', '9123456784', 'vendor');
 
 -- -- PRODUCTS (multiple categories to cover UI filters) --
-INSERT INTO `products` (`supplier_id`, `name`, `price`, `unit`, `moq`, `category`, `stock_quantity`) VALUES
-(1, 'Premium Onions', 28.50, 'kg', 50, 'vegetable', 2000),
-(1, 'MP Sharbati Wheat', 42.00, 'kg', 100, 'grains', 5000),
-(1, 'Farm-Fresh Potatoes', 22.00, 'kg', 50, 'vegetable', 3500),
-(1, 'Refined Wheat Flour', 38.00, 'kg', 100, 'grains', 2800),
-(2, 'Organic Basmati Rice', 155.00, 'kg', 40, 'grains', 1500),
-(2, 'Cold-Pressed Mustard Oil', 220.00, 'L', 20, 'oil', 800),
-(2, 'Organic Turmeric Powder', 350.00, 'kg', 10, 'spices', 500),
-(2, 'Kashmiri Apples', 180.00, 'kg', 30, 'fruit', 1000),
-(5, 'Sunflower Oil Tin', 1650.00, 'tin', 2, 'oil', 600),
-(5, 'Rice Bran Oil', 120.00, 'L', 50, 'oil', 1200),
-(6, 'Premium Maida (Flour)', 45.00, 'kg', 50, 'grains', 2200),
-(6, 'Red Onions', 30.00, 'kg', 25, 'vegetable', 2600),
-(6, 'Toor Dal', 95.00, 'kg', 50, 'grains', 1400);
+INSERT INTO `products` (`supplier_id`, `name`, `supplier_display_name`, `price`, `unit`, `moq`, `category`, `stock_quantity`) VALUES
+(1, 'Premium Onions', 'Kisan Agri Supply', 28.50, 'kg', 50, 'vegetable', 2000),
+(1, 'MP Sharbati Wheat', 'Kisan Agri Supply', 42.00, 'kg', 100, 'grains', 5000),
+(1, 'Farm-Fresh Potatoes', 'Kisan Agri Supply', 22.00, 'kg', 50, 'vegetable', 3500),
+(1, 'Refined Wheat Flour', 'Kisan Agri Supply', 38.00, 'kg', 100, 'grains', 2800),
+(1, 'Fresh Tomatoes', 'Kisan Agri Supply', 34.00, 'kg', 40, 'vegetable', 2400),
+(1, 'Green Chillies', 'Kisan Agri Supply', 70.00, 'kg', 20, 'vegetable', 900),
+(1, 'Bajra Flour', 'Kisan Agri Supply', 46.00, 'kg', 60, 'grains', 1800),
+(2, 'Organic Basmati Rice', 'Himalayan Organics', 155.00, 'kg', 40, 'grains', 1500),
+(2, 'Cold-Pressed Mustard Oil', 'Himalayan Organics', 220.00, 'L', 20, 'oil', 800),
+(2, 'Organic Turmeric Powder', 'Himalayan Organics', 350.00, 'kg', 10, 'spices', 500),
+(2, 'Kashmiri Apples', 'Himalayan Organics', 180.00, 'kg', 30, 'fruit', 1000),
+(2, 'Sona Masoori Rice', 'Himalayan Organics', 82.00, 'kg', 60, 'grains', 2200),
+(2, 'Groundnut Oil', 'Himalayan Organics', 195.00, 'L', 25, 'oil', 950),
+(2, 'Besan Flour', 'Himalayan Organics', 78.00, 'kg', 40, 'grains', 1600),
+(5, 'Sunflower Oil Tin', 'Sunrise Oils', 1650.00, 'tin', 2, 'oil', 600),
+(5, 'Rice Bran Oil', 'Sunrise Oils', 120.00, 'L', 50, 'oil', 1200),
+(5, 'Palmolein Oil', 'Sunrise Oils', 108.00, 'L', 60, 'oil', 1800),
+(5, 'Soybean Oil (Bulk)', 'Sunrise Oils', 112.00, 'L', 70, 'oil', 1700),
+(6, 'Premium Maida (Flour)', 'Urban Grains Co', 45.00, 'kg', 50, 'grains', 2200),
+(6, 'Red Onions', 'Urban Grains Co', 30.00, 'kg', 25, 'vegetable', 2600),
+(6, 'Toor Dal', 'Urban Grains Co', 95.00, 'kg', 50, 'grains', 1400),
+(6, 'Chana Dal', 'Urban Grains Co', 82.00, 'kg', 50, 'grains', 1600),
+(6, 'Moong Dal', 'Urban Grains Co', 108.00, 'kg', 40, 'grains', 1300),
+(6, 'Semolina (Sooji)', 'Urban Grains Co', 48.00, 'kg', 50, 'grains', 1900);
 
-ALTER TABLE `products` AUTO_INCREMENT = 14;
+ALTER TABLE `products` AUTO_INCREMENT = 26;
 
 -- -- ORDERS (multiple vendors for history, tracking, trends, group-order simulation) --
 INSERT INTO `orders` (`id`, `vendor_id`, `order_date`, `status`, `total_amount`) VALUES
@@ -277,7 +289,10 @@ INSERT INTO `group_order_members` (`group_order_id`, `vendor_id`, `quantity`) VA
 -- -- REVIEWS (demo) --
 INSERT INTO `reviews` (`order_id`, `vendor_id`, `rating`, `review_text`) VALUES
 (1, 3, 5, 'Great quality onions and timely delivery.'),
-(4, 4, 4, 'Good oil quality, potatoes were fresh.');
+(4, 4, 4, 'Good oil quality, potatoes were fresh.'),
+(2, 3, 4, 'Rice quality was good and arrived on time.'),
+(5, 7, 5, 'Oil quality excellent, will reorder.'),
+(6, 8, 3, 'Average quality, delivery was slightly late.');
 
 -- -- SUPPORT TICKETS (demo) --
 INSERT INTO `support_tickets` (`user_id`, `subject`, `message`, `type`, `status`) VALUES
