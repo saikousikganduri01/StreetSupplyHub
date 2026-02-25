@@ -3,6 +3,7 @@ let allProducts = [];
 let supplierProducts = [];
 let vendorOrders = [];
 let trendData = [];
+let recommendedProducts = [];
 
 let cart = [];
 let appState = {
@@ -32,6 +33,11 @@ async function fetchAllProducts() {
             allProducts = json.data;
             renderProducts();
             await fetchTrendData();
+            if (appState.isLoggedIn && appState.role === "vendor" && appState.id) {
+                fetchVendorOrders(renderRecommendationSection);
+            } else {
+                renderRecommendationSection();
+            }
         }
     } catch (err) { console.error("Fetch failed", err); }
 }
@@ -94,7 +100,11 @@ function goHome() {
         const cartIcon = document.getElementById('cart-count');
         if (cartIcon) cartIcon.parentElement.style.display = 'block';
     }
+    updateAuthUI();
+    updateInsightsLayout();
     renderProducts(document.getElementById('landing-search')?.value || "");
+    renderTrendSection();
+    renderRecommendationSection();
 }
 
 function hideAllPages() {
@@ -226,6 +236,8 @@ function login() {
     document.getElementById('profile-wrapper').classList.remove('hidden');
     document.getElementById('auth-nav-btn').classList.add('hidden');
     document.getElementById('menu-btn').classList.remove('hidden');
+    updateChatAccess();
+    updateAuthUI();
 
     const displayName = appState.userName || "User";
     const firstLetter = displayName.charAt(0).toUpperCase();
@@ -236,7 +248,9 @@ function login() {
 
     setupSidebar();
     if (appState.role === "supplier") {
-        showSellerDashboard();
+        document.getElementById('landing-page').classList.remove('hidden');
+        document.getElementById('hero-section').innerHTML = `<h1>Welcome back, ${displayName}!</h1>`;
+        fetchAllProducts();
         fetchSupplierProducts();
     } else {
         document.getElementById('landing-page').classList.remove('hidden');
@@ -248,6 +262,7 @@ function login() {
 
 function logout() {
     localStorage.removeItem("userData");
+    updateChatAccess();
     location.reload();
 }
 
@@ -314,24 +329,24 @@ function setupSidebar() {
     const sidebarContent = document.getElementById('sidebar-content');
     if (appState.role === 'supplier') {
         sidebarContent.innerHTML = `
-            <a href="#" onclick="goHome(); toggleSidebar();">🏪 Marketplace</a>
-            <a href="#" onclick="showSalesOverview(); toggleSidebar();">📈 Sales Overview</a>
-            <a href="#" onclick="showManageInventory(); toggleSidebar();">📦 Manage Inventory</a>
-            <a href="#" onclick="showSellerDashboard(); toggleSidebar();">🤝 Bargain Requests</a>
-            <a href="#" onclick="showPastCustomers(); toggleSidebar();">👥 Past Customers</a>
+            <a href="#" onclick="goHome(); toggleSidebar();">Marketplace</a>
+            <a href="#" onclick="showSalesOverview(); toggleSidebar();">Sales Overview</a>
+            <a href="#" onclick="showManageInventory(); toggleSidebar();">Manage Inventory</a>
+            <a href="#" onclick="showSellerDashboard(); toggleSidebar();">Bargain Requests</a>
+            <a href="#" onclick="showPastCustomers(); toggleSidebar();">Past Customers</a>
             <hr style="border:0; border-top:1px solid #444; margin:10px 0;">
-            <a href="#" onclick="showAbout(); toggleSidebar();">ℹ️ About Us</a>
-            <a href="#" onclick="showSupportPage(); toggleSidebar();">💬 Support</a>
+            <a href="#" onclick="showAbout(); toggleSidebar();">About Us</a>
+            <a href="#" onclick="showSupportPage(); toggleSidebar();">Support</a>
         `;
     } else {
         sidebarContent.innerHTML = `
-            <a href="#" onclick="goHome(); toggleSidebar();">🏠 Home</a>
-            <a href="#" onclick="showPreviousOrders(); toggleSidebar();">📦 My Orders</a>
-            <a href="#" onclick="showTrackingPage(); toggleSidebar();">📍 Track Orders</a>
-            <a href="#" onclick="showGroupHub(); toggleSidebar();">👥 Group Hub (Add Friends)</a>
-            <a href="#" onclick="showAbout(); toggleSidebar();">ℹ️ About Us</a>
-            <a href="#" onclick="showSupportPage(); toggleSidebar();">💬 Support</a>
-            <a href="#" onclick="showReviewsPage(); toggleSidebar();">⭐ Feedback</a>
+            <a href="#" onclick="goHome(); toggleSidebar();">Home</a>
+            <a href="#" onclick="showPreviousOrders(); toggleSidebar();">My Orders</a>
+            <a href="#" onclick="showTrackingPage(); toggleSidebar();">Track Orders</a>
+            <a href="#" onclick="showGroupHub(); toggleSidebar();">Group Hub (Add Friends)</a>
+            <a href="#" onclick="showAbout(); toggleSidebar();">About Us</a>
+            <a href="#" onclick="showSupportPage(); toggleSidebar();">Support</a>
+            <a href="#" onclick="showReviewsPage(); toggleSidebar();">Feedback</a>
         `;
     }
 }
@@ -363,7 +378,7 @@ function searchFriend() {
             }
             resultDiv.innerHTML = lastUserSearch.map(u => `
                 <div style="display:flex; justify-content:space-between; align-items:center; background:#f0f0f0; padding:10px; border-radius:5px; margin-bottom:8px;">
-                    <span>👤 ${u.business_name || u.full_name}</span>
+                    <span>${u.business_name || u.full_name}</span>
                     <button class="btn-primary" style="width:auto; padding:5px 15px;" onclick="sendFriendRequest(${u.id})">Add Friend</button>
                 </div>`).join('');
         })
@@ -435,32 +450,125 @@ function renderProducts(filter = "") {
     grid.innerHTML = "";
 
     const isSupplier = (appState.role === 'supplier');
+    const isGuest = !appState.isLoggedIn;
+    const pictureFiles = [
+        "Bajra Flour.jpg",
+        "Besan Flour.jpg",
+        "Chana Dal.jpg",
+        "Cold-Pressed Mustard Oil.jpg",
+        "Farm-Fresh Potatoes.webp",
+        "Fresh Tomatoes.jpg",
+        "Green Chillies.jpg",
+        "Groundnut Oil.jpg",
+        "Kashmiri Apples.jpg",
+        "MP Sharbati Wheat.jpg",
+        "Moong Dal.jpg",
+        "Organic Basmati Rice.jpg",
+        "Organic Turmeric Powder.jpg",
+        "Palmolein Oil.jpg",
+        "Premium Maida (Flour).jpg",
+        "Premium Onions.jpg",
+        "Red Onions.jpg",
+        "Refined Wheat Flour.jpg",
+        "Rice Bran Oil.jpg",
+        "Semolina (Sooji).jpg",
+        "Sona Masoori Rice.jpg",
+        "Soybean Oil (Bulk).jpg",
+        "Sunflower Oil Tin.jpg",
+        "Toor Dal.jpg"
+    ];
+    const normalizeName = (value) =>
+        String(value || "")
+            .toLowerCase()
+            .replace(/\.[^.]+$/, "")
+            .replace(/[^a-z0-9]+/g, " ")
+            .trim();
+    const pictureMap = new Map(pictureFiles.map((file) => [normalizeName(file), file]));
+    const findPicture = (productName) => {
+        const key = normalizeName(productName);
+        if (pictureMap.has(key)) return pictureMap.get(key);
+        for (const [fileKey, fileName] of pictureMap.entries()) {
+            if (fileKey.includes(key) || key.includes(fileKey)) return fileName;
+        }
+        return null;
+    };
+    const getProductImage = (p) => {
+        if (p.image) return p.image;
+        const matched = findPicture(p.name);
+        if (matched) return `pictures/${encodeURIComponent(matched)}`;
+        const category = (p.category || "").toLowerCase();
+        const name = (p.name || "Product").replace(/[^a-z0-9 ]/gi, "").trim() || "Product";
+        const label = encodeURIComponent(name.slice(0, 14));
+        if (category === "vegetable") {
+            return `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 220'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23e7f7ec'/><stop offset='1' stop-color='%23b8e6c8'/></linearGradient></defs><rect width='360' height='220' rx='18' fill='url(%23g)'/><circle cx='110' cy='110' r='54' fill='%2388cfa1'/><circle cx='190' cy='120' r='46' fill='%236ab384'/><circle cx='245' cy='95' r='34' fill='%234f9b6f'/><text x='24' y='198' font-family='Sora, Arial' font-size='18' fill='%2332593f'>${label}</text></svg>`;
+        }
+        if (category === "oil") {
+            return `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 220'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23fff3d4'/><stop offset='1' stop-color='%23ffd08a'/></linearGradient></defs><rect width='360' height='220' rx='18' fill='url(%23g)'/><rect x='90' y='40' width='60' height='120' rx='16' fill='%23f4b942'/><rect x='170' y='60' width='80' height='100' rx='18' fill='%23e39b2e'/><text x='24' y='198' font-family='Sora, Arial' font-size='18' fill='%236a4a12'>${label}</text></svg>`;
+        }
+        if (category === "grains" || category === "flour") {
+            return `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 220'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23fff5e1'/><stop offset='1' stop-color='%23f3d5a4'/></linearGradient></defs><rect width='360' height='220' rx='18' fill='url(%23g)'/><path d='M90 150 C110 90, 150 90, 170 150' fill='%23e2b97e'/><path d='M170 150 C190 90, 230 90, 250 150' fill='%23d6a86e'/><text x='24' y='198' font-family='Sora, Arial' font-size='18' fill='%236a4a12'>${label}</text></svg>`;
+        }
+        return `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 220'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23edf3ff'/><stop offset='1' stop-color='%23c9d9ff'/></linearGradient></defs><rect width='360' height='220' rx='18' fill='url(%23g)'/><rect x='86' y='60' width='190' height='90' rx='20' fill='%2384a2e6'/><text x='24' y='198' font-family='Sora, Arial' font-size='18' fill='%2332487a'>${label}</text></svg>`;
+    };
 
     allProducts
         .filter(p => p.name.toLowerCase().includes(filter.toLowerCase()))
         .filter(p => selectedCategory === "all" || p.category === selectedCategory)
         .forEach(p => {
+            const supplierPhone = p.supplier_phone || "N/A";
+            const trustScore = computeTrustScore(p);
+            const guestClass = isGuest ? "masked" : "";
+            const productImage = getProductImage(p);
             grid.innerHTML += `
                 <div class="prod-card">
+                    <img class="product-img" src="${productImage}" alt="${p.name}">
                     <span class="moq-tag">MOQ: ${p.moq} ${p.unit}</span>
+                    ${p.supplier_is_new ? `<span class="new-badge">New Supplier</span>` : ``}
                     <h3>${p.name}</h3>
+                    <div class="product-supplier">
+                        by ${p.supplier_display_name || p.supplier_business || p.supplier_name || "Supplier"}
+                        · <span class="${guestClass}">${supplierPhone}</span>
+                    </div>
                     <p class="price">₹${p.price} / ${p.unit}</p>
+                    <div class="supplier-hover">
+                        <div class="supplier-title">${p.supplier_display_name || p.supplier_business || p.supplier_name || "Supplier"}</div>
+                        <div class="supplier-meta ${guestClass}">${supplierPhone}</div>
+                        <div class="trust-score">Trust Score: <strong class="${guestClass}">${trustScore}</strong></div>
+                    </div>
                     ${isSupplier ? `
-                        <div class="view-only-tag">👁️ Supplier View (No Purchasing)</div>
-                    ` : `
-                        <div class="add-cart-row">
-                            <button class="qty-btn" onclick="changeQty(${p.id}, -1)">−</button>
-                            <button class="btn-primary add-btn" onclick="addToCart(${p.id})">Add (<span id="qty-${p.id}">${p.moq}</span>)</button>
-                            <button class="qty-btn" onclick="changeQty(${p.id}, 1)">+</button>
+                        <div class="view-only-tag">Supplier View (No Purchasing)</div>
+                    ` : isGuest ? `
+                        <div class="card-actions guest-actions">
+                            <button class="btn-primary" onclick="showLogin()">Login to Purchase</button>
+                            <p class="guest-note">Browse freely, login to place orders or bargain.</p>
                         </div>
-                        <button class="group-btn" style="background:#444;" onclick="openBargain(${p.id})">🤝 Bargain</button>
-                        <button class="group-btn" onclick="createGroupOrder(${p.id})">Create Group Order</button>
-                        <button class="group-btn join-btn hidden" id="join-btn-${p.id}" onclick="joinGroupOrder(${p.id})">Join Group Order</button>
-                        <p id="group-status-${p.id}" class="group-status hidden">Current Group: 0 ${p.unit}</p>
+                    ` : `
+                        <div class="card-actions">
+                            <div class="add-cart-row">
+                                <button class="qty-btn" onclick="changeQty(${p.id}, -1)">−</button>
+                                <button class="btn-primary add-btn" onclick="addToCart(${p.id})">Add (<span id="qty-${p.id}">${p.moq}</span>)</button>
+                                <button class="qty-btn" onclick="changeQty(${p.id}, 1)">+</button>
+                            </div>
+                            <button class="group-btn" style="background:#444;" onclick="openBargain(${p.id})">Bargain</button>
+                            <button class="group-btn" onclick="createGroupOrder(${p.id})">Create Group Order</button>
+                            <button class="group-btn join-btn hidden" id="join-btn-${p.id}" onclick="joinGroupOrder(${p.id})">Join Group Order</button>
+                            <p id="group-status-${p.id}" class="group-status hidden">Current Group: 0 ${p.unit}</p>
+                        </div>
                     `}
                 </div>`;
         });
     refreshAllGroupStatuses();
+}
+
+function updateAuthUI() {
+    const isGuest = !appState.isLoggedIn;
+    document.getElementById('profile-wrapper')?.classList.toggle('hidden', isGuest);
+    document.getElementById('auth-nav-btn')?.classList.toggle('hidden', !isGuest);
+    document.getElementById('menu-btn')?.classList.toggle('hidden', isGuest);
+    const cartIcon = document.getElementById('cart-count');
+    if (cartIcon) {
+        cartIcon.parentElement.style.display = isGuest || appState.role === 'supplier' ? 'none' : 'block';
+    }
 }
 
 function filterProducts() {
@@ -480,6 +588,7 @@ function filterCategory(category) {
 function renderTrendSection() {
     const trendList = document.getElementById("trend-list");
     if (!trendList) return;
+    if (!appState.isLoggedIn) return;
     trendList.innerHTML = "";
 
     const source = trendData.length
@@ -509,6 +618,197 @@ function renderTrendSection() {
     });
 }
 
+function buildRecommendations() {
+    const now = Date.now();
+    const productSignals = new Map();
+    const categoryAffinity = new Map();
+    const productsById = new Map(allProducts.map(p => [Number(p.id), p]));
+
+    vendorOrders.forEach(order => {
+        const orderTime = order?.date ? new Date(order.date).getTime() : now;
+        const daysAgo = Math.max(0, (now - orderTime) / (1000 * 60 * 60 * 24));
+        const recencyMultiplier = Math.max(0.25, 1 - (daysAgo / 120));
+
+        (order.items || []).forEach(item => {
+            const qty = Number(item.quantity ?? item.qty ?? 0) || 0;
+            const productId = Number(item.product_id || 0);
+            const itemName = (item?.name || "").trim();
+            const key = productId ? `id:${productId}` : `name:${itemName.toLowerCase()}`;
+            if (!itemName && !productId) return;
+
+            const prev = productSignals.get(key) || {
+                productId,
+                name: itemName,
+                count: 0,
+                qty: 0,
+                weightedScore: 0
+            };
+            prev.count += 1;
+            prev.qty += qty;
+            prev.weightedScore += (1 + Math.log1p(Math.max(1, qty))) * recencyMultiplier;
+            productSignals.set(key, prev);
+
+            const linkedProduct = productId ? productsById.get(productId) : allProducts.find(
+                p => (p.name || "").trim().toLowerCase() === itemName.toLowerCase()
+            );
+            if (linkedProduct?.category) {
+                const prevCat = categoryAffinity.get(linkedProduct.category) || 0;
+                categoryAffinity.set(linkedProduct.category, prevCat + (1 + Math.log1p(Math.max(1, qty))) * recencyMultiplier);
+            }
+        });
+    });
+
+    const signalsByProductId = new Map();
+    productSignals.forEach(signal => {
+        let product = null;
+        if (signal.productId) {
+            product = productsById.get(Number(signal.productId));
+        } else if (signal.name) {
+            product = allProducts.find(p => (p.name || "").trim().toLowerCase() === signal.name.toLowerCase());
+        }
+        if (product) signalsByProductId.set(Number(product.id), signal);
+    });
+
+    const ranked = allProducts.map(product => {
+        const signal = signalsByProductId.get(Number(product.id));
+        const categoryBoost = categoryAffinity.get(product.category) || 0;
+
+        let score = 0;
+        let reason = "Popular in your buying categories";
+
+        if (signal) {
+            score += (signal.weightedScore * 5) + (signal.count * 3) + Math.log1p(signal.qty);
+            reason = signal.count >= 2 ? "Buy Again" : "You bought this recently";
+        } else if (categoryBoost > 0) {
+            score += categoryBoost * 2.3;
+            reason = `Because you often buy ${product.category || "similar"} items`;
+        } else {
+            score += Number(product.supplier_total_orders || 0) * 0.08;
+            reason = "Trending with marketplace buyers";
+        }
+
+        const lowPriceBonus = Number(product.price || 0) > 0 ? (1 / Number(product.price)) * 40 : 0;
+        score += Math.min(2, lowPriceBonus);
+
+        return {
+            ...product,
+            recReason: reason,
+            recCount: signal ? signal.count : 0,
+            recQty: signal ? signal.qty : 0,
+            recScore: score
+        };
+    });
+
+    return ranked
+        .sort((a, b) => b.recScore - a.recScore)
+        .slice(0, Math.min(9, allProducts.length));
+}
+
+function recommendQuickAdd(productId) {
+    if (!appState.isLoggedIn) {
+        alert("Please login to add products.");
+        showLogin();
+        return;
+    }
+    if (appState.role !== "vendor") return alert("Only vendors can place orders.");
+    const product = allProducts.find(p => Number(p.id) === Number(productId));
+    if (!product) return;
+
+    const existing = cart.find(x => Number(x.id) === Number(productId));
+    if (existing) existing.qty += Number(product.moq || 1);
+    else cart.push({ ...product, qty: Number(product.moq || 1) });
+    updateCartUI();
+}
+
+function jumpToCategory(category) {
+    if (!category) return;
+    selectedCategory = category;
+    const select = document.getElementById('category-select');
+    if (select) select.value = (category === "grains" ? "flour" : category);
+    renderProducts(document.getElementById('landing-search')?.value || "");
+    document.getElementById("product-list")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderRecommendationSection() {
+    updateInsightsLayout();
+    if (appState.role === "supplier" || !appState.isLoggedIn) return;
+    const recommendList = document.getElementById("recommend-list");
+    if (!recommendList) return;
+
+    recommendList.innerHTML = "";
+    if (!appState.isLoggedIn || appState.role !== "vendor") {
+        recommendList.innerHTML = `<p class="recommend-empty">Login as a vendor to unlock personalized picks.</p>`;
+        return;
+    }
+
+    recommendedProducts = buildRecommendations();
+    if (!recommendedProducts.length) {
+        recommendList.innerHTML = `<p class="recommend-empty">Recommendations are getting ready. Place an order to personalize this section.</p>`;
+        return;
+    }
+
+    recommendList.innerHTML = recommendedProducts.map(p => {
+        const supplierName = p.supplier_display_name || p.supplier_business || p.supplier_name || "Supplier";
+        const reasonMeta = p.recCount > 0
+            ? `Ordered ${p.recCount} time${p.recCount > 1 ? "s" : ""} • ${p.recQty} ${p.unit}`
+            : `Category: ${p.category || "General"}`;
+        return `
+            <article class="recommend-card">
+                <div class="recommend-badge">${p.recReason}</div>
+                <h4>${p.name}</h4>
+                <div class="recommend-meta">by ${supplierName}</div>
+                <div class="recommend-submeta">${reasonMeta}</div>
+                <div class="recommend-bottom">
+                    <strong>₹${Number(p.price).toFixed(2)} / ${p.unit}</strong>
+                    <span class="moq-tag">MOQ ${p.moq}</span>
+                </div>
+                <div class="recommend-actions">
+                    <button class="recommend-btn" onclick="recommendQuickAdd(${p.id})">Add MOQ</button>
+                    <button class="recommend-btn alt" onclick="openBargain(${p.id})">Bargain</button>
+                    <button class="recommend-btn alt" onclick="jumpToCategory('${(p.category || "").replace(/'/g, "\\'")}')">More Like This</button>
+                </div>
+            </article>
+        `;
+    }).join("");
+}
+
+function updateInsightsLayout() {
+    const grid = document.querySelector('#landing-page .insights-grid');
+    const recommendSection = document.getElementById('recommend-section');
+    const trendSection = document.getElementById('trend-section');
+    if (!grid || !recommendSection) return;
+    const hideRecommendations = appState.role === 'supplier' || !appState.isLoggedIn;
+    const hideTrends = !appState.isLoggedIn;
+    recommendSection.classList.toggle('hidden', hideRecommendations);
+    if (trendSection) trendSection.classList.toggle('hidden', hideTrends);
+    grid.classList.toggle('hidden', hideRecommendations && hideTrends);
+    grid.classList.toggle('center-trend', hideRecommendations && !hideTrends);
+}
+
+function computeTrustScore(p) {
+    const totalOrders = Number(p.supplier_total_orders || 0);
+    const deliveredOrders = Number(p.supplier_delivered_orders || 0);
+    const cancelledOrders = Number(p.supplier_cancelled_orders || 0);
+    const avgRating = p.supplier_avg_rating !== null && p.supplier_avg_rating !== undefined
+        ? Number(p.supplier_avg_rating)
+        : null;
+    const avgPrice = p.avg_price_per_unit !== null && p.avg_price_per_unit !== undefined
+        ? Number(p.avg_price_per_unit)
+        : null;
+    const currentPrice = Number(p.price || 0);
+
+    const onTimeDelivery = totalOrders > 0 ? (deliveredOrders / totalOrders) * 100 : 70;
+    const completionRate = totalOrders > 0 ? ((totalOrders - cancelledOrders) / totalOrders) * 100 : 70;
+    const vendorRatings = avgRating !== null ? (avgRating / 5) * 100 : 75;
+    const priceStability = avgPrice !== null && currentPrice > 0
+        ? Math.max(0, 100 - (Math.abs(avgPrice - currentPrice) / currentPrice) * 100)
+        : 80;
+
+    const trust100 = (0.4 * onTimeDelivery) + (0.3 * completionRate) + (0.2 * vendorRatings) + (0.1 * priceStability);
+    const trust10 = Math.round((trust100 / 10) * 10) / 10;
+    return `${trust10.toFixed(1)}/10`;
+}
+
 // ---------------- GROUP ORDER ----------------
 
 function createGroupOrder(pid) {
@@ -529,7 +829,7 @@ function createGroupOrder(pid) {
         .then(res => res.json())
         .then(data => {
             if (!data.success) throw new Error(data.message || "Failed");
-            alert("Group Order Created 🎉");
+            alert("Group Order Created");
             fetchGroupOrderStatus(pid);
         })
         .catch(() => alert("Unable to create group order."));
@@ -725,7 +1025,7 @@ function showLoanOptions() {
             <h3>Choose Payment Option</h3>
             ${hasGroupDiscount ? `
                 <p style="color:#27ae60; font-weight:bold; margin-bottom:5px;">
-                    🎉 Group Discount Applied (5+ Members)
+                    Group Discount Applied (5+ Members)
                 </p>
                 <p>Original: <del>₹${originalTotal}</del></p>
                 <p>Total Amount: <strong style="font-size:1.4rem;">₹${finalTotal.toFixed(2)}</strong></p>
@@ -768,6 +1068,8 @@ async function finalizeOrder(total, paymentStatus) {
         updateCartUI();
         closeLoanPopup();
         if (!document.getElementById('cart-sidebar').classList.contains('cart-hidden')) toggleCart();
+        fetchVendorOrders(renderRecommendationSection);
+        fetchTrendData();
         showPreviousOrders();
     } else {
         alert(data.message || "Order failed");
@@ -822,7 +1124,7 @@ function showSellerDashboard() {
                 </tr>`).join('');
             dash.innerHTML = `
                 <div class="container">
-                    <h2>🤝 Bargain Requests</h2>
+                    <h2>Bargain Requests</h2>
                     <div class="trend-section">
                         <table class="seller-table">
                             <thead><tr><th>Vendor</th><th>Product</th><th>Offer</th><th>Qty</th><th>Action</th></tr></thead>
@@ -848,7 +1150,7 @@ function showSalesOverview() {
     hideAllPages();
     document.getElementById('seller-dashboard').classList.remove('hidden');
     document.getElementById('seller-dashboard').innerHTML = `
-        <h2>📊 Sales Overview</h2>
+        <h2>Sales Overview</h2>
         <p>Total Products: ${supplierProducts.length}</p>
         <p>Use "Manage Inventory" to update pricing and MOQ.</p>
     `;
@@ -857,34 +1159,69 @@ function showSalesOverview() {
 async function showManageInventory() {
     hideAllPages();
     document.getElementById('seller-dashboard').classList.remove('hidden');
+    const stockWarningThreshold = 50;
+    const inventoryRows = supplierProducts.map(p => {
+        const stock = Number(p.stock_quantity ?? 0);
+        const isLow = stock <= stockWarningThreshold;
+        const stockClass = isLow ? "stock-pill low" : "stock-pill";
+        const stockLabel = isLow ? `${stock} Low` : `${stock}`;
+        return `
+            <tr>
+                <td>${p.name}</td>
+                <td><input type="number" class="supplier-input" value="${p.price}" onchange="updateProductRow(${p.id}, ${p.moq}, this)"></td>
+                <td><input type="number" class="supplier-input" value="${p.stock_quantity ?? 0}" onchange="updateProductRow(${p.id}, ${p.moq}, this)"></td>
+                <td><span class="${stockClass}">${stockLabel}</span></td>
+                    <td><button class="supplier-icon-btn" onclick="deleteProduct(${p.id})">Delete</button></td>
+            </tr>`;
+    }).join('');
     document.getElementById('seller-dashboard').innerHTML = `
-        <h2>📦 Manage Inventory</h2>
-        <div class="trend-section">
-            <h3>Add Product</h3>
-            <input type="text" id="add-name" placeholder="Name">
-            <input type="number" id="add-price" placeholder="Price">
-            <input type="number" id="add-moq" placeholder="MOQ">
-            <input type="text" id="add-unit" placeholder="Unit (kg/L)">
-            <button onclick="addProduct()">➕ Add</button>
-        </div>
-        <table>
-            ${supplierProducts.map(p => `
-                <tr>
-                    <td>${p.name}</td>
-                    <td><input type="number" value="${p.price}" onchange="updateProduct(${p.id}, this.value, ${p.moq})"></td>
-                    <td><button onclick="deleteProduct(${p.id})">🗑</button></td>
-                </tr>`).join('')}
-        </table>`;
+        <div class="supplier-inventory">
+            <div class="inventory-header">
+                <h2>Manage Inventory</h2>
+                <p>Keep your catalog accurate for better visibility and orders.</p>
+            </div>
+            <div class="trend-section inventory-form">
+                <h3>Add Product</h3>
+                <div class="inventory-grid">
+                    <input type="text" id="add-name" class="supplier-input" placeholder="Name">
+                    <input type="number" id="add-price" class="supplier-input" placeholder="Price">
+                    <input type="number" id="add-moq" class="supplier-input" placeholder="MOQ">
+                    <input type="text" id="add-unit" class="supplier-input" placeholder="Unit (kg/L)">
+                    <input type="number" id="add-stock" class="supplier-input" placeholder="Stock Qty" min="1">
+                </div>
+                <button class="supplier-btn" onclick="addProduct()">➕ Add</button>
+            </div>
+            <table class="seller-table inventory-table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Price</th>
+                        <th>Stock Qty</th>
+                        <th>Remaining Stock</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${inventoryRows || `<tr><td colspan="5">No products found.</td></tr>`}
+                </tbody>
+            </table>
+        </div>`;
 }
 
 async function addProduct() {
+    const stockQuantity = Number(document.getElementById('add-stock').value);
+    if (!Number.isFinite(stockQuantity) || stockQuantity <= 0) {
+        alert("Please enter a valid stock quantity.");
+        return;
+    }
     const payload = {
         supplier_id: appState.id,
         name: document.getElementById('add-name').value,
         price: document.getElementById('add-price').value,
         moq: document.getElementById('add-moq').value,
         unit: document.getElementById('add-unit').value,
-        category: 'general'
+        category: 'general',
+        stock_quantity: stockQuantity
     };
     const res = await fetch(`${API_BASE}/api/products`, {
         method: "POST",
@@ -894,12 +1231,23 @@ async function addProduct() {
     if ((await res.json()).success) fetchSupplierProducts();
 }
 
-async function updateProduct(id, price, moq) {
-    await fetch(`${API_BASE}/api/products/${id}`, {
+async function updateProduct(id, price, moq, stockQuantity) {
+    const res = await fetch(`${API_BASE}/api/products/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ price, moq })
+        body: JSON.stringify({ price, moq, stock_quantity: stockQuantity })
     });
+    const data = await res.json();
+    if (data.success) fetchSupplierProducts();
+}
+
+function updateProductRow(id, moq, inputEl) {
+    const row = inputEl.closest('tr');
+    if (!row) return;
+    const inputs = row.querySelectorAll('input.supplier-input');
+    const price = inputs[0]?.value;
+    const stockQuantity = inputs[1]?.value;
+    updateProduct(id, price, moq, stockQuantity);
 }
 
 async function deleteProduct(id) {
@@ -940,7 +1288,7 @@ function renderSupplierCustomers(customers) {
     if (!dash) return;
     dash.innerHTML = `
         <div class="container">
-            <h2>👥 Past Customers List</h2>
+            <h2>Past Customers List</h2>
             <div class="trend-section" style="padding:20px;">
                 <table class="seller-table">
                     <thead>
@@ -956,7 +1304,7 @@ function renderSupplierCustomers(customers) {
                                 <td><strong>${c.vendor_business || c.vendor_name || "Vendor"}</strong><br><small>${c.vendor_name || ""}</small></td>
                                 <td>${c.total_orders}</td>
                                 <td>
-                                    <button class="btn-primary" style="padding:5px 10px; width:auto;" onclick="alert('Messaging ${c.vendor_name || "Vendor"}...')">💬 Message</button>
+                                    <button class="btn-primary" style="padding:5px 10px; width:auto;" onclick="alert('Messaging ${c.vendor_name || "Vendor"}...')">Message</button>
                                 </td>
                             </tr>
                         `).join('') : '<tr><td colspan="3">No past customers found yet.</td></tr>'}
@@ -999,7 +1347,7 @@ function renderTracking() {
     container.innerHTML = vendorOrders.length ? vendorOrders.map(o => `
         <div class="prod-card">
             <h3>Order ID: ${o.id}</h3>
-            <p>Status: 🚚 ${o.status || "Processing"}</p>
+            <p>Status: ${o.status || "Processing"}</p>
             <div style="background: #eee; border-radius: 10px; height: 10px; width: 100%; margin: 10px 0;">
                 <div style="background: #27ae60; width: 50%; height: 100%; border-radius: 10px;"></div>
             </div>
@@ -1125,6 +1473,11 @@ function submitReview(orderIndex) {
 // ---------------- CHAT ----------------
 
 function toggleChatWindow() {
+    if (!appState.isLoggedIn) {
+        alert("Please login to use the chat assistant.");
+        showLogin();
+        return;
+    }
     document.getElementById("chat-window")?.classList.toggle("hidden");
 }
 
@@ -1144,6 +1497,11 @@ function appendChatBubble(className, text, messageId = "") {
 }
 
 async function sendChatMessage() {
+    if (!appState.isLoggedIn) {
+        alert("Please login to use the chat assistant.");
+        showLogin();
+        return;
+    }
     const input = document.getElementById("chat-input");
     const message = input?.value.trim();
     if (!message) return;
@@ -1170,6 +1528,15 @@ async function sendChatMessage() {
     }
 }
 
+function updateChatAccess() {
+    const container = document.getElementById("chatbot-container");
+    if (!container) return;
+    container.classList.toggle("hidden", !appState.isLoggedIn);
+    if (!appState.isLoggedIn) {
+        document.getElementById("chat-window")?.classList.add("hidden");
+    }
+}
+
 // ---------------- INIT ----------------
 
 window.onload = () => {
@@ -1179,11 +1546,15 @@ window.onload = () => {
         if (appState.isLoggedIn) {
             login();
         } else {
-            showLogin();
+            hideAllPages();
+            document.getElementById('landing-page').classList.remove('hidden');
             fetchAllProducts();
         }
     } else {
-        showLogin();
+        hideAllPages();
+        document.getElementById('landing-page').classList.remove('hidden');
         fetchAllProducts();
     }
+    updateChatAccess();
+    updateAuthUI();
 };
