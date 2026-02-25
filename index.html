@@ -64,10 +64,10 @@
         <h2>Profile Settings</h2>
         <div class="profile-box">
             <label>Name</label>
-            <input type="text" id="profile-edit-name" class="input-field">
+            <input type="text" id="profile-edit-name" class="input-field" readonly>
 
             <label>Phone</label>
-            <input type="text" id="profile-edit-phone" class="input-field">
+            <input type="text" id="profile-edit-phone" class="input-field" readonly>
 
             <label>Business</label>
             <input type="text" id="profile-edit-business" class="input-field">
@@ -92,7 +92,7 @@
                 <div id="search-result" style="margin-top:15px;"></div>
             </div>
 
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+            <div class="feature-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
                 <div class="trend-section" style="padding:20px;">
                     <h3>My Friends</h3>
                     <ul id="friend-list" style="list-style:none; padding:0;">
@@ -121,7 +121,7 @@
 
     <div id="landing-page" class="hidden">
         <section class="hero-mini" id="hero-section">
-            <h1>Direct from <span class="highlight">Wholesalers</span></h1>
+            <h1>Direct from <span class="highlight">Sellers</span></h1>
             <p>Verified raw materials with transparent pricing & digital bargaining.</p>
         </section>
 
@@ -158,8 +158,8 @@
     <div id="auth-container">
         <div id="login-page" class="auth-card">
             <h2>Welcome Back</h2>
-            <input type="text" id="login-name" class="input-field" placeholder="Full Name">
-            <input type="tel" id="login-phone" class="input-field" placeholder="Phone Number">
+            <input type="text" id="login-name" class="input-field" placeholder="Full Name" onkeydown="handleLoginKey(event)">
+            <input type="tel" id="login-phone" class="input-field" placeholder="Phone Number" onkeydown="handleLoginKey(event)">
             
             <div id="login-initial-action">
                 <button class="btn-primary" onclick="sendOTP()">Send OTP</button>
@@ -167,7 +167,7 @@
 
             <div id="otp-section" class="hidden" style="margin-top: 15px;">
                 <p style="font-size: 0.8rem; color: #666; margin-bottom: 5px;">Enter OTP sent to your phone</p>
-                <input type="text" id="otp-input" class="input-field otp-box" maxlength="4">
+                <input type="text" id="otp-input" class="input-field otp-box" maxlength="4" onkeydown="handleLoginKey(event)">
                 <button class="btn-primary" onclick="verifyOTP()" style="margin-top:10px;">Verify & Enter Marketplace</button>
                 <p id="login-otp-message" class="otp-message"></p>
             </div>
