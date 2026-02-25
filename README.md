@@ -1,8 +1,8 @@
-StreetSupply Hub
+#StreetSupply Hub
 
 A B2B grocery marketplace web app for suppliers and vendors. It supports OTP-based login, a vendor marketplace with search and trends, supplier inventory management, bargaining, group orders, and support/chat.
 
-Features
+#Features
 
 Vendor marketplace with product search, category filtering, and price trends.
 
@@ -16,7 +16,7 @@ Group orders to aggregate demand and unlock supplier discounts.
 
 Support/chat interface powered by an AI-integrated backend.
 
-Tech Stack
+#Tech Stack
 
 Frontend: HTML, CSS, JavaScript (vanilla)
 
@@ -24,7 +24,7 @@ Backend: Node.js (Express) + MySQL
 
 AI Chat Service: Flask (Python) + Gemini API
 
-Project Structure
+#Project Structure
 
 index.html - Main UI
 
@@ -42,7 +42,7 @@ requirements.txt - Python dependencies
 
 package.json - Node.js dependencies
 
-Prerequisites
+#Prerequisites
 
 Node.js 18+
 
@@ -50,9 +50,9 @@ MySQL 8+
 
 Python 3.10+ (for the chat service)
 
-Setup
+#Setup
 
-Install dependencies
+-Install dependencies
 
 For the main server: npm install
 
@@ -66,7 +66,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 
 
-Configure environment variables
+#Configure environment variables
 Create a .env file in the project root:
 
 DB_HOST=localhost
